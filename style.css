@@ -260,3 +260,23 @@ dl.kv dt:last-of-type,dl.kv dd:last-of-type{border-bottom:none}
   .btn,.tab,.upl{transition:background .12s ease,border-color .12s ease,color .12s ease}
 }
 @keyframes rise{from{opacity:0;transform:translate(-50%,10px)}}
+
+/* ---------- Бүртгүүлэх хүсэлт ---------- */
+.req{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:space-between;
+  border:1px solid #EEE0BC;border-left:4px solid var(--gold);border-radius:var(--r-sm);
+  padding:13px 16px;margin-bottom:10px;background:#FFFCF4;
+}
+.req .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
+.req .acts{display:flex;gap:8px;flex-wrap:wrap}
+.khoroo-pick{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+.khoroo-pick .field{margin:0;min-width:190px}
+.count-tag{font-size:12.5px;color:var(--muted);padding-bottom:10px}
+.barrow span.clickable{cursor:pointer}
+.barrow span.clickable:hover{color:var(--blue);text-decoration:underline}
+
+/* ---------- Ажилтны 3x4 зураг ---------- */
+.photo34{width:54px;aspect-ratio:3/4;object-fit:cover;border:1px solid var(--line);border-radius:2px;display:block;background:#F4F6FB}
+.photo34.big{width:120px}
+.photo34.ph{display:flex;align-items:center;justify-content:center;font-size:10.5px;color:var(--muted);text-align:center;line-height:1.3;padding:4px}
+.staffcell{display:flex;gap:11px;align-items:flex-start}
