@@ -67,6 +67,31 @@ function fillSelect(sel, arr, val){ if(!sel) return; sel.innerHTML = arr.map(x=>
 const okOrgs   = () => DB.orgs.filter(o=>o.appr==="ok");
 const pendings = () => DB.orgs.filter(o=>o.appr==="pending");
 
+/* ============ Нууц үг харах товч ============ */
+const EYE_ON  = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 12S5.6 5.2 12 5.2 22.2 12 22.2 12 18.4 18.8 12 18.8 1.8 12 1.8 12Z"/><circle cx="12" cy="12" r="3.1"/></svg>`;
+const EYE_OFF = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 6.6A9.6 9.6 0 0 1 12 6.5c6.4 0 10.2 5.5 10.2 5.5a17 17 0 0 1-3.6 4.1M6.5 8.1A17 17 0 0 0 1.8 12s3.8 5.5 10.2 5.5c1.3 0 2.4-.2 3.5-.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>`;
+function attachPwToggles(root){
+  (root || document).querySelectorAll('input[type="password"]').forEach(inp=>{
+    if(inp.dataset.pwt) return;
+    inp.dataset.pwt = "1";
+    const wrap = document.createElement("div");
+    wrap.className = "pwwrap";
+    inp.parentNode.insertBefore(wrap, inp);
+    wrap.appendChild(inp);
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "pweye"; b.innerHTML = EYE_ON;
+    b.title = "Нууц үг харах"; b.setAttribute("aria-label", "Нууц үг харах");
+    b.onclick = () => {
+      const show = inp.type === "password";
+      inp.type = show ? "text" : "password";
+      b.innerHTML = show ? EYE_OFF : EYE_ON;
+      b.title = show ? "Нууц үг нуух" : "Нууц үг харах";
+      inp.focus();
+    };
+    wrap.appendChild(b);
+  });
+}
+
 /* ============ Өгөгдөл ============ */
 let DB = { orgs: [] };
 let ME = null;   // {role:'admin'} эсвэл {role:'org', id}
@@ -87,7 +112,13 @@ function seed(){
     mk("Хан-Уул дүүргийн 63-р сургууль","9010063","Боловсролын байгууллага","Төрийн өмчит",20,"Их наяд, 63-р сургуулийн байр",6200,112,"07:30–19:00","","","С.Мөнхзул","80223344","school63@edu.mn","1998-09-01","Идэвхтэй","ok"),
     mk("Оргилуун Ундрага ББСБ ХХК","6688120","Банк бус санхүүгийн байгууллага, ломбард","Хувийн",3,"Чингисийн өргөн чөлөө 9, Сансар төв",75,8,"09:00–18:00","СЗХ-2025/0117","2028-02-01","Г.Энхжаргал","94551122","undraga@mail.mn","2023-03-15","Идэвхтэй","ok"),
     mk("Жаргалант Саун ХХК","6777301","Саун, массаж","Хувийн",11,"11-р хороо, 3-р хэсэг, 14-р байр",180,7,"10:00–23:00","","","Л.Отгонбаяр","99445511","jargalantsaun@mail.mn","2024-07-01","Идэвхтэй","pending")
-  ];
+  ].map(o=>{
+    const cams = { "6123456":[2,4], "6234117":[4,12], "6091834":[3,8], "6455012":[2,6],
+                   "6300945":[6,9], "9010063":[14,42], "6688120":[3,7], "6777301":[4,5] };
+    const c = cams[o.reg] || [0,0];
+    o.camOut = c[0]; o.camIn = c[1];
+    return o;
+  });
 }
 
 async function seedStaff(){
@@ -117,7 +148,7 @@ async function loadDB(){
     const r = await DBX.get(KEY, true);
     DB = JSON.parse(r.value);
     if(!Array.isArray(DB.orgs)) DB.orgs = [];
-    DB.orgs.forEach(o=>{ o.notices = o.notices||[]; o.appr = o.appr||"ok"; o.own = o.own||"Хувийн"; o.staffN = o.staffN||0; });
+    DB.orgs.forEach(o=>{ o.notices = o.notices||[]; o.appr = o.appr||"ok"; o.own = o.own||"Хувийн"; o.staffN = o.staffN||0; o.camOut = o.camOut ?? ""; o.camIn = o.camIn ?? ""; });
   }catch(e){
     DB = { orgs: seed() };
     try{ await saveDB(); await seedStaff(); }catch(_){}
@@ -364,6 +395,9 @@ function kvTable(o){
     ["Үйл ажиллагааны талбай", o.area ? o.area+" м²" : ""],
     ["Ажиллагсдын тоо", o.staff],
     ["Ажиллах цагийн хуваарь", o.hours],
+    ["Гадна камерын тоо", o.camOut===""||o.camOut===undefined ? "" : String(o.camOut)],
+    ["Дотор камерын тоо", o.camIn===""||o.camIn===undefined ? "" : String(o.camIn)],
+    ["Нийт камер", (Number(o.camOut)||0)+(Number(o.camIn)||0) ? String((Number(o.camOut)||0)+(Number(o.camIn)||0)) : ""],
     ["Тусгай зөвшөөрлийн дугаар", o.lic],
     ["Зөвшөөрөл дуусах огноо", o.licEnd ? `${esc(o.licEnd)} &nbsp; ${licPill(o)}` : ""],
     ["Захирал / эзэмшигч", o.dir],
@@ -711,7 +745,7 @@ function paintTable(){
     <table>
       <thead><tr>
         ${th("name","Байгууллага")}${th("cat","Чиглэл")}${th("own","Өмч")}${th("khoroo","Хороо")}
-        <th>Хаяг</th>${th("staffN","Ажилтан")}<th>Зөвшөөрөл</th>${th("status","Төлөв")}<th>Бүртгэл</th><th>Холбоо барих</th><th></th>
+        <th>Хаяг</th>${th("staffN","Ажилтан")}<th>Камер<div class="reg">гадна/дотор</div></th><th>Зөвшөөрөл</th>${th("status","Төлөв")}<th>Бүртгэл</th><th>Холбоо барих</th><th></th>
       </tr></thead>
       <tbody>${list.map(o=>`
         <tr>
@@ -721,6 +755,7 @@ function paintTable(){
           <td class="num">${esc(o.khoroo)}</td>
           <td>${esc(o.addr)||'<span class="note">—</span>'}</td>
           <td class="num">${o.staffN||0}<div class="reg">зарласан ${esc(o.staff)||"—"}</div></td>
+          <td class="num">${(Number(o.camOut)||0)+(Number(o.camIn)||0)}<div class="reg">${esc(o.camOut||0)} / ${esc(o.camIn||0)}</div></td>
           <td>${licPill(o)}</td>
           <td>${statusPill(o.status)}</td>
           <td>${apprPill(o)}</td>
@@ -975,7 +1010,7 @@ function exportStaffCSV(o, list){
 function orgForm(o){
   const isNew = !o;
   const isAdmin = ME.role==="admin";
-  const v = o || { name:"",reg:"",cat:CATS[0],own:OWNERS[0],district:"Хан-Уул",khoroo:1,addr:"",area:"",staff:"",hours:"",lic:"",licEnd:"",dir:"",phone:"",mail:"",since:"",status:"Идэвхтэй",note:"" };
+  const v = o || { name:"",reg:"",cat:CATS[0],own:OWNERS[0],district:"Хан-Уул",khoroo:1,addr:"",area:"",staff:"",camOut:"",camIn:"",hours:"",lic:"",licEnd:"",dir:"",phone:"",mail:"",since:"",status:"Идэвхтэй",note:"" };
   const body = `
     <div class="two">
       <div class="field"><label>Байгууллагын нэр</label><input id="e_name" value="${esc(v.name)}"></div>
@@ -993,6 +1028,10 @@ function orgForm(o){
     <div class="two">
       <div class="field"><label>Талбай, м²</label><input id="e_area" type="number" min="0" value="${esc(v.area)}"></div>
       <div class="field"><label>Ажиллагсдын тоо</label><input id="e_staff" type="number" min="0" value="${esc(v.staff)}"></div>
+    </div>
+    <div class="two">
+      <div class="field"><label>Гадна камерын тоо</label><input id="e_camOut" type="number" min="0" value="${esc(v.camOut)}"></div>
+      <div class="field"><label>Дотор камерын тоо</label><input id="e_camIn" type="number" min="0" value="${esc(v.camIn)}"></div>
     </div>
     <div class="two">
       <div class="field"><label>Тусгай зөвшөөрлийн дугаар</label><input id="e_lic" value="${esc(v.lic)}"></div>
@@ -1023,7 +1062,8 @@ function orgForm(o){
       const data = {
         name, reg, cat:$("#e_cat").value, own:$("#e_own").value, district:"Хан-Уул",
         khoroo:Number($("#e_kh").value), addr:$("#e_addr").value.trim(),
-        area:$("#e_area").value, staff:$("#e_staff").value, hours:$("#e_hours").value.trim(),
+        area:$("#e_area").value, staff:$("#e_staff").value,
+        camOut:$("#e_camOut").value, camIn:$("#e_camIn").value, hours:$("#e_hours").value.trim(),
         since:$("#e_since").value, lic:$("#e_lic").value.trim(), licEnd:$("#e_licEnd").value,
         dir:$("#e_dir").value.trim(), phone:$("#e_phone").value.trim(), mail:$("#e_mail").value.trim(),
         status:isAdmin?$("#e_status").value:v.status, note:$("#e_note").value.trim()
@@ -1066,6 +1106,7 @@ function openModal(title, body, buttons){
       <div class="body">${body}</div>
       <div class="foot">${buttons.map((b,i)=>`<button class="btn ${b.cls}" data-i="${i}">${esc(b.label)}</button>`).join("")}</div>
     </div></div>`;
+  attachPwToggles($("#modalHost"));
   $("#mx").onclick = closeModal;
   $("#modalHost").querySelector(".modal-bg").onclick = e => { if(e.target.classList.contains("modal-bg")) closeModal(); };
   $("#modalHost").querySelectorAll(".foot .btn").forEach(btn=>btn.onclick=()=>buttons[+btn.dataset.i].act(btn));
@@ -1078,7 +1119,7 @@ function exportCSV(list, filename){
   const cols = [
     ["Байгууллагын нэр","name"],["Улсын бүртгэлийн дугаар","reg"],["Үйл ажиллагааны чиглэл","cat"],["Өмчийн хэлбэр","own"],
     ["Дүүрэг","district"],["Хороо","khoroo"],["Хаяг","addr"],["Талбай (м²)","area"],["Ажиллагсдын тоо (зарласан)","staff"],["Бүртгэсэн ажилтан","staffN"],
-    ["Ажиллах цаг","hours"],["Тусгай зөвшөөрөл","lic"],["Зөвшөөрөл дуусах","licEnd"],["Захирал","dir"],
+    ["Ажиллах цаг","hours"],["Гадна камер","camOut"],["Дотор камер","camIn"],["Тусгай зөвшөөрөл","lic"],["Зөвшөөрөл дуусах","licEnd"],["Захирал","dir"],
     ["Утас","phone"],["И-мэйл","mail"],["Эхэлсэн огноо","since"],["Төлөв","status"],["Тэмдэглэл","note"],["Бүртгүүлсэн огноо","created"]
   ];
   const q = s => `"${String(s ?? "").replace(/"/g,'""')}"`;
@@ -1140,6 +1181,7 @@ async function downloadAnket(o){
     ${row("Үйл ажиллагааны талбай", o.area ? o.area+" м²" : "")}
     ${row("Ажиллагсдын тоо", o.staff)}
     ${row("Ажиллах цагийн хуваарь", o.hours)}
+    ${row("Хяналтын камер", `Гадна ${o.camOut||0} ш · Дотор ${o.camIn||0} ш · Нийт ${(Number(o.camOut)||0)+(Number(o.camIn)||0)} ш`)}
   </table>
 
   <h2>3. Тусгай зөвшөөрөл</h2>
@@ -1186,6 +1228,7 @@ async function downloadAnket(o){
   fillSelect($("#rg_cat"), CATS);
   fillSelect($("#rg_own"), OWNERS);
   fillSelect($("#rg_khoroo"), KHOROOS.map(String));
+  attachPwToggles(document);
   await loadDB();
   await ensureNotices();
   renderAuthStats();
