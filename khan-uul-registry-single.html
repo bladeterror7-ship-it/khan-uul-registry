@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Хан-Уул дүүрэг — Аж ахуйн нэгжийн бүртгэл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Хан-Уул дүүрэг — Аж ахуйн нэгжийн бүртгэл
+   Дизайн: гүн индиго + алтан шугам, Lora гарчиг / Manrope бичвэр
+   ============================================================ */
+
+:root{
+  --canvas:#EDEFF4;
+  --surface:#FFFFFF;
+  --ink:#1B2340;
+  --ink-2:#2A3357;
+  --muted:#6A7391;
+  --line:#D6DAE6;
+  --line-soft:#E8EBF2;
+  --blue:#2F4B99;
+  --blue-soft:#E4E9F8;
+  --gold:#A3801A;
+  --gold-soft:#F7EFD8;
+  --ok:#1F7A4D;      --ok-soft:#DEF0E6;
+  --warn:#96620A;    --warn-soft:#FAEBD2;
+  --bad:#A62231;     --bad-soft:#F8DFE3;
+  --r:6px; --r-sm:4px;
+  --shadow:0 1px 2px rgba(27,35,64,.06);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--canvas);
+  color:var(--ink);
+  font-family:Manrope,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:14px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.serif{
+  font-family:Lora,Georgia,"Times New Roman",serif;
+  font-weight:600; letter-spacing:-.005em; margin:0;
+}
+.num{font-variant-numeric:tabular-nums}
+.hidden{display:none !important}
+.note{font-size:12.5px;color:var(--muted)}
+
+/* ---------- Формын элемент ---------- */
+button{font:inherit;cursor:pointer}
+input,select,textarea{
+  font:inherit;color:inherit;width:100%;padding:9px 11px;
+  border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);
+}
+input:hover,select:hover,textarea:hover{border-color:#BFC6D8}
+input:focus,select:focus,textarea:focus,button:focus-visible,label.upl:focus-within{
+  outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)
+}
+input:disabled,select:disabled{background:#F3F5F9;color:var(--muted)}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.field{margin-bottom:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 13px}
+
+.btn{
+  background:var(--blue);border:1px solid var(--blue);color:#fff;
+  padding:9px 17px;border-radius:var(--r-sm);font-weight:600;font-size:13.5px;
+}
+.btn:hover{background:#26407F;border-color:#26407F}
+.btn.ghost{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{background:#F2F4FA;border-color:#BFC6D8}
+.btn.danger{background:var(--bad);border-color:var(--bad)}
+.btn.danger:hover{background:#8C1C29;border-color:#8C1C29}
+.btn.sm{padding:6px 11px;font-size:12.5px}
+
+.msg{padding:10px 13px;border-radius:var(--r-sm);font-size:13px;margin-bottom:15px;border-left:3px solid}
+.msg.err{background:var(--bad-soft);color:var(--bad);border-left-color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok);border-left-color:var(--ok)}
+.hint{font-size:12.5px;color:var(--muted);margin-top:16px;padding-top:13px;border-top:1px solid var(--line-soft)}
+.hint b{color:var(--ink)}
+
+/* ---------- Нэвтрэх дэлгэц ---------- */
+#auth{display:grid;grid-template-columns:1.05fr 1fr;min-height:100vh}
+.auth-brand{
+  background:var(--ink);color:#E6E9F3;padding:56px 48px;
+  display:flex;flex-direction:column;justify-content:center;gap:34px;position:relative;
+}
+.auth-brand::after{content:"";position:absolute;top:0;right:0;bottom:0;width:4px;background:var(--gold)}
+.auth-brand .kicker{
+  font-size:12.5px;font-weight:600;color:var(--gold);
+  padding-bottom:12px;border-bottom:1px solid #343D64;display:inline-block;
+}
+.auth-brand h1{color:#fff;font-size:clamp(28px,3.2vw,40px);line-height:1.12;margin:16px 0 14px}
+.auth-brand p{color:#A7AFC9;max-width:42ch;margin:0}
+.stat-rows{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#343D64;border:1px solid #343D64;border-radius:var(--r)}
+.stat-row{background:var(--ink);padding:16px 18px}
+.stat-row span{display:block;color:#98A1BD;font-size:12px;line-height:1.35;margin-top:2px}
+.stat-row b{font-family:Lora,serif;font-size:26px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums}
+
+.auth-panel{display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.auth-card{
+  width:100%;max-width:450px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);padding:30px;box-shadow:var(--shadow);
+}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:-6px -6px 22px}
+.tab{
+  flex:1;background:none;border:none;border-bottom:2px solid transparent;
+  padding:11px 6px;color:var(--muted);font-size:13px;font-weight:600;
+}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--blue);border-bottom-color:var(--gold)}
+
+/* ---------- Толгой ---------- */
+header.bar{
+  background:var(--ink);color:#fff;border-bottom:3px solid var(--gold);
+  padding:14px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+}
+header.bar h2{font-size:17px;color:#fff}
+header.bar .sub{font-size:12px;color:#98A1BD;margin-top:2px}
+.spacer{flex:1}
+.who{font-size:12px;color:#A7AFC9;text-align:right;line-height:1.4}
+.who b{color:#fff;display:block;font-size:13.5px;font-weight:700}
+header.bar .btn.ghost{background:transparent;color:#fff;border-color:#3D477099}
+header.bar .btn.ghost:hover{background:#2A3357}
+
+main{padding:26px 24px 60px;max-width:1300px;margin:0 auto}
+
+/* ---------- Үзүүлэлтийн мөр ---------- */
+.strip{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;margin-bottom:20px;box-shadow:var(--shadow);
+}
+.strip div{padding:17px 19px;border-right:1px solid var(--line-soft)}
+.strip div:last-child{border-right:none}
+.strip b{
+  display:block;font-family:Lora,serif;font-size:30px;font-weight:600;
+  font-variant-numeric:tabular-nums;line-height:1.1;
+}
+.strip span{font-size:12px;color:var(--muted);display:block;margin-top:3px}
+
+/* ---------- Самбар ---------- */
+.panel{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  margin-bottom:20px;box-shadow:var(--shadow);overflow:hidden;
+}
+.panel > h3{
+  padding:14px 18px;font-size:15.5px;
+  border-bottom:1px solid var(--line-soft);
+  display:flex;align-items:center;gap:8px;
+}
+.panel .body{padding:18px}
+
+.toolbar{
+  display:flex;gap:11px;flex-wrap:wrap;align-items:flex-end;
+  padding:16px 18px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px;box-shadow:var(--shadow);
+}
+.toolbar .field{margin:0;min-width:155px;flex:1}
+
+/* ---------- Хүснэгт ---------- */
+.tblwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{
+  text-align:left;font-weight:700;color:var(--muted);font-size:11.5px;
+  padding:11px 14px;background:#F4F6FB;border-bottom:1px solid var(--line);white-space:nowrap;
+}
+th.sortable{cursor:pointer}
+th.sortable:hover{color:var(--blue)}
+td{padding:12px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#F7F9FD}
+.name{font-weight:700}
+.reg{color:var(--muted);font-size:11.5px;margin-top:1px}
+
+.pill{display:inline-block;padding:3px 10px;font-size:11.5px;font-weight:600;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.neutral{background:#EDEFF4;color:var(--muted)}
+
+/* ---------- Диаграм ---------- */
+.bars{display:grid;gap:9px}
+.barrow{display:grid;grid-template-columns:165px 1fr 40px;align-items:center;gap:12px;font-size:12.5px}
+.bartrack{height:9px;background:#EDEFF4;border-radius:999px;overflow:hidden}
+.barfill{height:9px;background:var(--blue);border-radius:999px}
+.barrow i{font-style:normal;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:600}
+
+/* ---------- Түлхүүр–утга жагсаалт ---------- */
+dl.kv{display:grid;grid-template-columns:200px 1fr;margin:0}
+dl.kv dt{padding:9px 0;color:var(--muted);font-size:12.5px;font-weight:600;border-bottom:1px solid var(--line-soft)}
+dl.kv dd{padding:9px 0;margin:0;border-bottom:1px solid var(--line-soft)}
+dl.kv dt:last-of-type,dl.kv dd:last-of-type{border-bottom:none}
+
+/* ---------- Мэдэгдэл ---------- */
+.notice{
+  border:1px solid var(--line-soft);border-left:4px solid var(--line);
+  border-radius:var(--r-sm);background:var(--surface);
+  padding:12px 15px;margin-bottom:9px;display:flex;gap:13px;align-items:flex-start;
+}
+.notice.bad{border-left-color:var(--bad);background:var(--bad-soft);border-color:#F0CED3}
+.notice.warn{border-left-color:var(--gold);background:var(--gold-soft);border-color:#EEE0BC}
+.notice.info{border-left-color:var(--blue);background:var(--blue-soft);border-color:#CFDAF3}
+.notice .when{font-size:11.5px;color:var(--muted);margin-top:4px}
+.notice .dot{width:7px;height:7px;border-radius:50%;background:var(--bad);margin-top:7px;flex:none}
+.badge{display:inline-block;background:var(--bad);color:#fff;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;margin-left:8px;vertical-align:middle}
+
+/* ---------- Зураг, файл ---------- */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px}
+.shot{position:relative;border:1px solid var(--line);border-radius:var(--r-sm);background:#F4F6FB;aspect-ratio:4/3;overflow:hidden}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.shot button{
+  position:absolute;top:6px;right:6px;border:none;border-radius:var(--r-sm);
+  background:rgba(27,35,64,.85);color:#fff;font-size:11.5px;font-weight:600;padding:4px 9px;
+}
+.shot button:hover{background:var(--bad)}
+.filebox{
+  display:flex;gap:16px;align-items:center;flex-wrap:wrap;
+  border:1px dashed var(--line);border-radius:var(--r);padding:16px;background:#FAFBFD;
+}
+.filebox img{max-height:130px;border:1px solid var(--line);border-radius:var(--r-sm)}
+.upl{
+  display:inline-block;border:1px solid var(--line);background:var(--surface);
+  padding:9px 16px;border-radius:var(--r-sm);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:0;
+}
+.upl:hover{background:#F2F4FA;border-color:#BFC6D8}
+.upl input{display:none}
+
+/* ---------- Модал, мэдэгдэл ---------- */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(19,25,47,.6);
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:32px 16px;overflow-y:auto;z-index:50;
+}
+.modal{background:var(--surface);border-radius:var(--r);width:100%;max-width:740px;overflow:hidden}
+.modal h3{
+  padding:16px 20px;border-bottom:1px solid var(--line-soft);
+  display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:17px;
+}
+.modal .body{padding:20px}
+.modal .foot{padding:14px 20px;border-top:1px solid var(--line-soft);background:#FAFBFD;display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+.x{background:none;border:none;font-size:22px;line-height:1;color:var(--muted);padding:0 4px}
+.x:hover{color:var(--bad)}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;
+  font-size:13px;font-weight:600;z-index:80;box-shadow:0 4px 14px rgba(27,35,64,.25);
+}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+
+/* ---------- Жижиг дэлгэц ---------- */
+@media (max-width:900px){
+  #auth{grid-template-columns:1fr}
+  .auth-brand{padding:34px 24px;gap:24px}
+  .auth-brand::after{top:auto;left:0;right:0;bottom:0;width:auto;height:4px}
+  main{padding:20px 16px 48px}
+  .strip{grid-template-columns:1fr 1fr}
+  .strip div:nth-child(2n){border-right:none}
+  .strip div:nth-child(-n+2){border-bottom:1px solid var(--line-soft)}
+  dl.kv{grid-template-columns:1fr}
+  dl.kv dt{border-bottom:none;padding-bottom:0}
+  .barrow{grid-template-columns:115px 1fr 36px}
+  .two{grid-template-columns:1fr;gap:0}
+}
+@media (prefers-reduced-motion:no-preference){
+  .toast{animation:rise .18s ease-out}
+  .btn,.tab,.upl{transition:background .12s ease,border-color .12s ease,color .12s ease}
+}
+@keyframes rise{from{opacity:0;transform:translate(-50%,10px)}}
+
+</style>
+</head>
+<body>
+
+<!-- ======================= НЭВТРЭХ ======================= -->
+<div id="auth">
+  <div class="auth-brand">
+    <div>
+      <span class="kicker">Хан-Уул дүүрэг · Улаанбаатар хот</span>
+      <h1>Аж ахуйн нэгж,<br>байгууллагын бүртгэл</h1>
+      <p>Эмийн сан, баар, караоке, дэлгүүр, үйлчилгээний газар — дүүрэгт үйл ажиллагаа явуулж буй бүх нэгжийн нэгдсэн мэдээллийн сан.</p>
+    </div>
+    <div class="stat-rows" id="authStats"></div>
+  </div>
+
+  <div class="auth-panel">
+    <div class="auth-card">
+      <div class="tabs">
+        <button class="tab on" data-tab="login">Байгууллага</button>
+        <button class="tab" data-tab="reg">Бүртгүүлэх</button>
+        <button class="tab" data-tab="admin">Админ</button>
+      </div>
+      <div id="authMsg"></div>
+
+      <form id="fLogin" class="pane">
+        <div class="field"><label>Улсын бүртгэлийн дугаар</label><input id="li_reg" placeholder="жишээ: 6123456" required></div>
+        <div class="field"><label>Нууц үг</label><input id="li_pw" type="password" required></div>
+        <button class="btn" style="width:100%">Нэвтрэх</button>
+        <div class="hint">Туршилтын бүртгэлүүдийн нууц үг: <b>1234</b></div>
+      </form>
+
+      <form id="fReg" class="pane hidden">
+        <div class="field"><label>Байгууллагын нэр</label><input id="rg_name" required></div>
+        <div class="two">
+          <div class="field"><label>Улсын бүртгэлийн дугаар</label><input id="rg_reg" required></div>
+          <div class="field"><label>Үйл ажиллагааны чиглэл</label><select id="rg_cat"></select></div>
+        </div>
+        <div class="two">
+          <div class="field"><label>Хороо</label><select id="rg_khoroo"></select></div>
+          <div class="field"><label>Холбоо барих утас</label><input id="rg_phone" required></div>
+        </div>
+        <div class="field"><label>Дэлгэрэнгүй хаяг</label><input id="rg_addr" placeholder="гудамж, байр, тоот"></div>
+        <div class="two">
+          <div class="field"><label>Нууц үг</label><input id="rg_pw" type="password" required></div>
+          <div class="field"><label>Нууц үг давтах</label><input id="rg_pw2" type="password" required></div>
+        </div>
+        <button class="btn" style="width:100%">Бүртгүүлэх</button>
+        <div class="hint">Бүртгүүлсний дараа үлдсэн мэдээлэл, зураг, зөвшөөрлөө өөрийн хуудаснаас оруулна.</div>
+      </form>
+
+      <form id="fAdmin" class="pane hidden">
+        <div class="field"><label>Админ код</label><input id="ad_user" required></div>
+        <div class="field"><label>Нууц үг</label><input id="ad_pw" type="password" required></div>
+        <button class="btn" style="width:100%">Нэвтрэх</button>
+        <div class="hint">Туршилтын админ: <b>admin</b> / <b>khanuul2026</b></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= АПП ======================= -->
+<div id="app" class="hidden">
+  <header class="bar">
+    <div>
+      <h2>Хан-Уул дүүрэг — Аж ахуйн нэгжийн бүртгэл</h2>
+      <div class="sub" id="roleLine"></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="who" id="whoBox"></div>
+    <button class="btn ghost sm" id="btnOut">Гарах</button>
+  </header>
+  <main id="view"></main>
+</div>
+
+<div id="modalHost"></div>
+<div id="toastHost"></div>
+
+<script>
+/* ============================================================
+   Хан-Уул дүүрэг — Аж ахуйн нэгжийн бүртгэл (app.js)
+   ============================================================ */
+
+/* Өгөгдөл хадгалах давхарга.
+   - Claude artifact дотор: window.storage (нийтийн сан)
+   - Жирийн сервер/локал файл дээр: localStorage
+   Сервер рүү шилжихдээ зөвхөн энэ блокийг API дуудлагаар солино. */
+const DBX = (() => {
+  if (window.storage && typeof window.storage.get === "function") return window.storage;
+  const mem = {};
+  const ls = (() => { try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return localStorage; } catch(e){ return null; } })();
+  const get = k => ls ? ls.getItem(k) : (k in mem ? mem[k] : null);
+  const put = (k,v) => { ls ? ls.setItem(k,v) : (mem[k]=v); };
+  const rm  = k => { ls ? ls.removeItem(k) : delete mem[k]; };
+  return {
+    async get(k){ const v = get(k); if(v===null || v===undefined) throw new Error("not found: "+k); return {key:k, value:v}; },
+    async set(k,v){ put(k,v); return {key:k, value:v}; },
+    async delete(k){ rm(k); return {key:k, deleted:true}; },
+    async list(){ return {keys:[]}; }
+  };
+})();
+
+/* ============ Тогтмолууд ============ */
+const KEY = "khanuul_registry_v1";
+const ADMIN = { user:"admin", pw:"khanuul2026" };
+const CATS = ["Эмийн сан","Баар / паб","Караоке","Ресторан, зоогийн газар","Хүнсний дэлгүүр","Худалдааны төв","Зочид буудал","Гоо сайхны салон","Авто засвар, угаалга","Биллиард, тоглоомын газар","Фитнес, спорт","Боловсролын байгууллага","Эрүүл мэндийн байгууллага","Үйлдвэр","Барилга угсралт","Бусад үйлчилгээ"];
+const STATUSES = ["Идэвхтэй","Түр зогссон","Хаагдсан"];
+const KHOROOS = Array.from({length:25},(_,i)=>i+1);
+
+/* ============ Туслах ============ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const hash = s => { let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))>>>0; return h.toString(36); };
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today = () => new Date().toISOString().slice(0,10);
+function daysLeft(d){ if(!d) return null; return Math.round((new Date(d)-new Date(today()))/86400000); }
+function toast(t){ const el=document.createElement("div"); el.className="toast"; el.textContent=t; $("#toastHost").appendChild(el); setTimeout(()=>el.remove(),2600); }
+function fillSelect(sel, arr, val){ sel.innerHTML = arr.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join(""); if(val) sel.value=val; }
+
+/* ============ Өгөгдөл ============ */
+let DB = { orgs: [] };
+let ME = null;           // {role:'admin'} эсвэл {role:'org', id}
+let saving = false;
+
+function seed(){
+  const mk = (name,reg,cat,kh,addr,area,staff,hours,lic,licEnd,dir,phone,mail,since,status)=>({
+    id:uid(), name, reg, cat, district:"Хан-Уул", khoroo:kh, addr, area, staff, hours,
+    lic, licEnd, dir, phone, mail, since, status, note:"", pw:hash("1234"), created:today()
+  });
+  return [
+    mk("Ай Эм Си Фарм ХХК","6123456","Эмийн сан",3,"Чингисийн өргөн чөлөө 15, Наран төв 1 давхар",48,6,"09:00–21:00","ЭМ-2024/1187","2027-03-01","Б.Оюунчимэг","99112233","imcpharm@mail.mn","2019-05-14","Идэвхтэй"),
+    mk("Найт Стар Энтертайнмент ХХК","6234117","Караоке",11,"Хан-Уул 11-р хороо, 120 мянгат, Сүлд төв",210,14,"18:00–02:00","ХУД-2025/0442","2026-09-01","Д.Ганзориг","88445566","nightstar@mail.mn","2021-09-02","Идэвхтэй"),
+    mk("Зайсан Паб ХХК","6091834","Баар / паб",15,"Зайсангийн гудамж 4, 1-р байр",95,9,"12:00–00:00","ХУД-2024/0311","2026-10-05","Ч.Тэмүүлэн","94002211","zaisanpub@mail.mn","2018-06-11","Идэвхтэй"),
+    mk("Оргил Март ХХК","6455012","Хүнсний дэлгүүр",4,"Яармагийн 2-р гудамж 21",130,11,"08:00–23:00","","","Н.Алтанцэцэг","95778899","orgilmart@mail.mn","2020-02-20","Идэвхтэй"),
+    mk("Толгойт Авто Сервис ХХК","6300945","Авто засвар, угаалга",8,"Үйлдвэрийн бүс, 7-р гудамж 12",420,17,"09:00–19:00","","","Ж.Батсайхан","99887744","autoservice@mail.mn","2017-11-30","Түр зогссон"),
+    mk("Гоо Чимэг салон","6512207","Гоо сайхны салон",20,"Их наяд 6-р байр 1 тоот",62,5,"10:00–20:00","","","С.Мөнхзул","80223344","goochimeg@mail.mn","2022-04-18","Идэвхтэй")
+  ];
+}
+
+async function loadDB(){
+  try{
+    const r = await DBX.get(KEY, true);
+    DB = JSON.parse(r.value);
+    if(!Array.isArray(DB.orgs)) DB.orgs = [];
+  }catch(e){
+    DB = { orgs: seed() };
+    try{ await saveDB(); }catch(_){}
+  }
+}
+async function saveDB(){
+  saving = true;
+  try{ await DBX.set(KEY, JSON.stringify(DB), true); }
+  catch(e){ toast("Хадгалахад алдаа гарлаа. Дахин оролдоно уу."); throw e; }
+  finally{ saving = false; }
+}
+
+/* ============ Зураг, бичиг баримт ============ */
+const MKEY = id => "khanuul_media_" + id;
+const mediaCache = {};
+async function loadMedia(id){
+  if(mediaCache[id]) return mediaCache[id];
+  try{ const r = await DBX.get(MKEY(id), true); mediaCache[id] = JSON.parse(r.value); }
+  catch(e){ mediaCache[id] = { photos:[], lic:null }; }
+  if(!Array.isArray(mediaCache[id].photos)) mediaCache[id].photos = [];
+  return mediaCache[id];
+}
+async function saveMedia(id, m){
+  mediaCache[id] = m;
+  try{ await DBX.set(MKEY(id), JSON.stringify(m), true); }
+  catch(e){ toast("Файл хадгалахад алдаа гарлаа. Хэмжээг багасгаад дахин оролдоно уу."); throw e; }
+}
+function shrinkImage(file, max=1100, q=.72){
+  return new Promise((res, rej)=>{
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(1, max/Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width*s); c.height = Math.round(img.height*s);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL("image/jpeg", q));
+      };
+      img.onerror = rej; img.src = fr.result;
+    };
+    fr.onerror = rej; fr.readAsDataURL(file);
+  });
+}
+function readAsData(file){
+  return new Promise((res, rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file); });
+}
+function openData(dataUrl, name){
+  const bin = atob(dataUrl.split(",")[1]);
+  const type = dataUrl.slice(5, dataUrl.indexOf(";"));
+  const arr = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  const url = URL.createObjectURL(new Blob([arr], {type}));
+  const a = document.createElement("a"); a.href=url; a.download=name||"file"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+/* ============ Мэдэгдэл ============ */
+function pushNotice(o, key, kind, text){
+  o.notices = o.notices || [];
+  if(o.notices.some(n=>n.key===key)) return false;
+  o.notices.unshift({ id:uid(), key, kind, text, date:today(), read:false });
+  return true;
+}
+async function ensureNotices(){
+  let changed = false;
+  DB.orgs.forEach(o=>{
+    const d = daysLeft(o.licEnd);
+    if(d===null) return;
+    if(d<0)
+      changed = pushNotice(o, "exp:"+o.licEnd, "bad",
+        `Тусгай зөвшөөрлийн хугацаа ${o.licEnd}-нд дууссан. Үйл ажиллагаагаа үргэлжлүүлэхийн тулд зөвшөөрлөө сунгуулж, шинэ бичиг баримтаа энэ хуудсанд байршуулна уу.`) || changed;
+    else if(d<=30)
+      changed = pushNotice(o, "w30:"+o.licEnd, "warn",
+        `Тусгай зөвшөөрлийн хугацаа дуусахад ${d} хоног үлдлээ (${o.licEnd}). Сунгуулах хүсэлтээ дүүргийн бүртгэлийн албанд хүргүүлнэ үү.`) || changed;
+    else if(d<=60)
+      changed = pushNotice(o, "w60:"+o.licEnd, "warn",
+        `Тусгай зөвшөөрлийн хугацаа дуусахад ${d} хоног үлдлээ (${o.licEnd}).`) || changed;
+  });
+  if(changed){ try{ await saveDB(); }catch(e){} }
+}
+const unread = o => (o.notices||[]).filter(n=>!n.read).length;
+
+/* ============ Нэвтрэх дэлгэц ============ */
+function renderAuthStats(){
+  const n = DB.orgs.length, act = DB.orgs.filter(o=>o.status==="Идэвхтэй").length;
+  const kh = new Set(DB.orgs.map(o=>o.khoroo)).size;
+  const cat = new Set(DB.orgs.map(o=>o.cat)).size;
+  $("#authStats").innerHTML = [
+    ["Бүртгэлтэй нэгж", n],["Идэвхтэй үйл ажиллагаатай", act],
+    ["Хамрагдсан хороо", kh],["Үйл ажиллагааны чиглэл", cat]
+  ].map(([a,b])=>`<div class="stat-row"><span>${a}</span><b class="num">${b}</b></div>`).join("");
+}
+function authMsg(text, kind="err"){ $("#authMsg").innerHTML = text ? `<div class="msg ${kind}">${esc(text)}</div>` : ""; }
+
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on", x===t));
+  const map = { login:"#fLogin", reg:"#fReg", admin:"#fAdmin" };
+  document.querySelectorAll(".pane").forEach(p=>p.classList.add("hidden"));
+  $(map[t.dataset.tab]).classList.remove("hidden");
+  authMsg("");
+});
+
+$("#fLogin").onsubmit = e => {
+  e.preventDefault();
+  const reg = $("#li_reg").value.trim(), pw = $("#li_pw").value;
+  const o = DB.orgs.find(x=>x.reg===reg);
+  if(!o || o.pw!==hash(pw)) return authMsg("Бүртгэлийн дугаар эсвэл нууц үг буруу байна.");
+  ME = { role:"org", id:o.id }; enterApp();
+};
+
+$("#fReg").onsubmit = async e => {
+  e.preventDefault();
+  const reg = $("#rg_reg").value.trim();
+  if(DB.orgs.some(x=>x.reg===reg)) return authMsg("Энэ бүртгэлийн дугаар аль хэдийн бүртгэгдсэн байна.");
+  if($("#rg_pw").value.length<4) return authMsg("Нууц үг дор хаяж 4 тэмдэгт байна.");
+  if($("#rg_pw").value !== $("#rg_pw2").value) return authMsg("Нууц үг таарахгүй байна.");
+  const o = {
+    id:uid(), name:$("#rg_name").value.trim(), reg, cat:$("#rg_cat").value,
+    district:"Хан-Уул", khoroo:Number($("#rg_khoroo").value), addr:$("#rg_addr").value.trim(),
+    area:"", staff:"", hours:"", lic:"", licEnd:"", dir:"", phone:$("#rg_phone").value.trim(),
+    mail:"", since:"", status:"Идэвхтэй", note:"", pw:hash($("#rg_pw").value), created:today()
+  };
+  DB.orgs.push(o); await saveDB();
+  ME = { role:"org", id:o.id }; enterApp(); toast("Бүртгэл үүслээ. Мэдээллээ гүйцээж оруулна уу.");
+};
+
+$("#fAdmin").onsubmit = e => {
+  e.preventDefault();
+  if($("#ad_user").value.trim()!==ADMIN.user || $("#ad_pw").value!==ADMIN.pw) return authMsg("Админ код эсвэл нууц үг буруу байна.");
+  ME = { role:"admin" }; enterApp();
+};
+
+$("#btnOut").onclick = () => {
+  ME = null; $("#app").classList.add("hidden"); $("#auth").classList.remove("hidden");
+  $("#li_pw").value=""; $("#ad_pw").value=""; renderAuthStats(); authMsg("");
+};
+
+function enterApp(){
+  $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
+  render();
+}
+
+/* ============ Дүрслэл ============ */
+function render(){
+  if(!ME) return;
+  if(ME.role==="admin"){
+    $("#roleLine").textContent = "Дүүргийн нэгдсэн мэдээллийн сан — бүх байгууллагын мэдээлэл";
+    $("#whoBox").innerHTML = `<b>Админ</b>Дүүргийн бүртгэлийн алба`;
+    renderAdmin();
+  }else{
+    const o = DB.orgs.find(x=>x.id===ME.id);
+    if(!o){ $("#btnOut").click(); return; }
+    $("#roleLine").textContent = "Байгууллагын хуудас — зөвхөн өөрийн мэдээлэл";
+    const un = unread(o);
+    $("#whoBox").innerHTML = `<b>${esc(o.name)}${un?`<span class="badge">${un} мэдэгдэл</span>`:""}</b>Бүртгэл №${esc(o.reg)}`;
+    renderOrg(o);
+  }
+}
+
+/* ---------- Байгууллагын хуудас ---------- */
+function licCountdown(o){
+  const d = daysLeft(o.licEnd);
+  if(d===null) return `<b style="font-size:19px;padding-top:6px"><span class="pill neutral">Огноо оруулаагүй</span></b><span>Тусгай зөвшөөрөл</span>`;
+  if(d<0) return `<b class="num" style="color:var(--bad)">${-d}</b><span>Зөвшөөрөл дууссанаас хойш, хоног</span>`;
+  return `<b class="num" style="color:${d<=60?"var(--warn)":"inherit"}">${d}</b><span>Зөвшөөрөл дуусахад үлдсэн хоног</span>`;
+}
+
+function renderOrg(o){
+  const notices = (o.notices||[]).slice(0,12);
+  const un = unread(o);
+  $("#view").innerHTML = `
+    <div class="panel">
+      <h3>Мэдэгдэл ${un?`<span class="badge">${un} шинэ</span>`:""}</h3>
+      <div class="body">
+        ${notices.length ? notices.map(n=>`
+          <div class="notice ${esc(n.kind)}">
+            ${n.read?"":'<span class="dot"></span>'}
+            <div><div>${esc(n.text)}</div><div class="when">${esc(n.date)}${n.read?"":" · шинэ"}</div></div>
+          </div>`).join("") : `<p class="note">Одоогоор мэдэгдэл алга. Тусгай зөвшөөрлийн хугацаа дуусах үед энд автоматаар мэдэгдэнэ.</p>`}
+        ${un ? `<button class="btn ghost sm" id="oRead" style="margin-top:8px">Бүгдийг уншсан болгох</button>` : ""}
+      </div>
+    </div>
+
+    <div class="strip">
+      <div><b>${esc(o.khoroo)}</b><span>${esc(o.district)} дүүрэг, дугаар хороо</span></div>
+      <div><b class="num">${esc(o.staff||"—")}</b><span>Ажиллагсдын тоо</span></div>
+      <div><b class="num">${esc(o.area||"—")}</b><span>Талбай, м²</span></div>
+      <div>${licCountdown(o)}</div>
+    </div>
+
+    <div class="panel">
+      <h3>Тусгай зөвшөөрөл</h3>
+      <div class="body">
+        <dl class="kv" style="margin-bottom:14px">
+          <dt>Зөвшөөрлийн дугаар</dt><dd>${esc(o.lic)||'<span class="note">—</span>'}</dd>
+          <dt>Дуусах огноо</dt><dd>${o.licEnd ? esc(o.licEnd)+" &nbsp; "+licPill(o) : '<span class="note">—</span>'}</dd>
+        </dl>
+        <div class="filebox" id="licBox"><span class="note">Ачаалж байна…</span></div>
+        <p class="note" style="margin-top:10px">Зөвшөөрлийн гэрчилгээний зураг эсвэл PDF-ийг байршуулна. Дугаар, огноог “Мэдээлэл засах” хэсгээс оруулна.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Байгууллагын зураг</h3>
+      <div class="body">
+        <div class="gallery" id="gal"><span class="note">Ачаалж байна…</span></div>
+        <div style="margin-top:12px">
+          <label class="upl">Зураг нэмэх<input type="file" accept="image/*" multiple id="upPhoto"></label>
+        </div>
+        <p class="note" style="margin-top:8px">Хамгийн ихдээ 6 зураг. Зургийг автоматаар шахаж хадгална.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Бүртгэлийн мэдээлэл</h3>
+      <div class="body">${kvTable(o)}</div>
+      <div style="padding:13px 16px;border-top:1px solid var(--line-soft);display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="oEdit">Мэдээлэл засах</button>
+        <button class="btn ghost" id="oPw">Нууц үг солих</button>
+        <button class="btn ghost" id="oCsv">Өөрийн мэдээллийг татах</button>
+      </div>
+    </div>
+    <p class="note">Таны оруулсан мэдээлэл, зураг дүүргийн бүртгэлийн албанд харагдана. Бусад байгууллага таны мэдээллийг харах боломжгүй.</p>
+  `;
+  $("#oEdit").onclick = () => orgForm(o);
+  $("#oPw").onclick = () => pwForm(o);
+  $("#oCsv").onclick = () => exportCSV([o], `bureeddel_${o.reg}.csv`);
+  if($("#oRead")) $("#oRead").onclick = async () => {
+    (o.notices||[]).forEach(n=>n.read=true); await saveDB(); render();
+  };
+  paintOrgMedia(o);
+}
+
+async function paintOrgMedia(o){
+  const m = await loadMedia(o.id);
+
+  // Зөвшөөрлийн баримт
+  const box = $("#licBox"); if(!box) return;
+  box.innerHTML = m.lic
+    ? `${m.lic.data.startsWith("data:image") ? `<img src="${m.lic.data}" alt="Тусгай зөвшөөрөл">` : `<span>📄 ${esc(m.lic.name)}</span>`}
+       <div style="display:flex;gap:8px;flex-wrap:wrap">
+         <button class="btn ghost sm" id="licGet">Татаж авах</button>
+         <button class="btn ghost sm" id="licDel">Устгах</button>
+         <label class="upl" style="padding:5px 10px;font-size:13px">Солих<input type="file" accept="image/*,application/pdf" id="licUp"></label>
+       </div>`
+    : `<span class="note">Зөвшөөрлийн баримт байршуулаагүй байна.</span>
+       <label class="upl">Баримт байршуулах<input type="file" accept="image/*,application/pdf" id="licUp"></label>`;
+
+  const licUpload = async e => {
+    const f = e.target.files[0]; if(!f) return;
+    if(f.size > 4*1024*1024) return toast("Файл 4 МБ-аас бага байх ёстой.");
+    const data = f.type.startsWith("image/") ? await shrinkImage(f, 1400, .78) : await readAsData(f);
+    m.lic = { name:f.name, data, at:today() };
+    await saveMedia(o.id, m); toast("Зөвшөөрлийн баримт хадгалагдлаа."); paintOrgMedia(o);
+  };
+  if($("#licUp")) $("#licUp").onchange = licUpload;
+  if($("#licGet")) $("#licGet").onclick = () => openData(m.lic.data, m.lic.name);
+  if($("#licDel")) $("#licDel").onclick = async () => { m.lic=null; await saveMedia(o.id,m); paintOrgMedia(o); toast("Баримтыг устгалаа."); };
+
+  // Зургийн цомог
+  const gal = $("#gal");
+  gal.innerHTML = m.photos.length
+    ? m.photos.map((p,i)=>`<div class="shot"><img src="${p}" alt="Байгууллагын зураг ${i+1}"><button data-i="${i}">Устгах</button></div>`).join("")
+    : `<p class="note">Зураг оруулаагүй байна.</p>`;
+  gal.querySelectorAll("[data-i]").forEach(b=>b.onclick = async () => {
+    m.photos.splice(+b.dataset.i,1); await saveMedia(o.id,m); paintOrgMedia(o); toast("Зургийг устгалаа.");
+  });
+  $("#upPhoto").onchange = async e => {
+    const files = [...e.target.files];
+    if(!files.length) return;
+    if(m.photos.length + files.length > 6) return toast("Хамгийн ихдээ 6 зураг байршуулна.");
+    for(const f of files){
+      if(!f.type.startsWith("image/")) continue;
+      m.photos.push(await shrinkImage(f));
+    }
+    await saveMedia(o.id, m); paintOrgMedia(o); toast("Зураг хадгалагдлаа.");
+  };
+}
+
+function statusPill(s){
+  const k = s==="Идэвхтэй" ? "ok" : s==="Түр зогссон" ? "warn" : "bad";
+  return `<span class="pill ${k}">${esc(s)}</span>`;
+}
+function licPill(o){
+  if(!o.lic && !o.licEnd) return `<span class="pill neutral">Бүртгээгүй</span>`;
+  const d = daysLeft(o.licEnd);
+  if(d===null) return `<span class="pill neutral">${esc(o.lic)}</span>`;
+  if(d<0) return `<span class="pill bad">Хугацаа дууссан</span>`;
+  if(d<=60) return `<span class="pill warn">${d} хоног үлдсэн</span>`;
+  return `<span class="pill ok">Хүчинтэй</span>`;
+}
+function kvTable(o){
+  const rows = [
+    ["Байгууллагын нэр", o.name],
+    ["Улсын бүртгэлийн дугаар", o.reg],
+    ["Үйл ажиллагааны чиглэл", o.cat],
+    ["Байршил", `${o.district} дүүрэг, ${o.khoroo}-р хороо`],
+    ["Дэлгэрэнгүй хаяг", o.addr],
+    ["Үйл ажиллагааны талбай", o.area ? o.area+" м²" : ""],
+    ["Ажиллагсдын тоо", o.staff],
+    ["Ажиллах цагийн хуваарь", o.hours],
+    ["Тусгай зөвшөөрлийн дугаар", o.lic],
+    ["Зөвшөөрөл дуусах огноо", o.licEnd ? `${o.licEnd} &nbsp; ${licPill(o)}` : ""],
+    ["Захирал / эзэмшигч", o.dir],
+    ["Утас", o.phone],
+    ["И-мэйл", o.mail],
+    ["Үйл ажиллагаа эхэлсэн", o.since],
+    ["Төлөв", statusPill(o.status)],
+    ["Тэмдэглэл", o.note],
+    ["Бүртгэсэн огноо", o.created]
+  ];
+  return `<dl class="kv">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v ? (String(v).includes("<") ? v : esc(v)) : '<span class="note">—</span>'}</dd>`).join("")}</dl>`;
+}
+
+/* ---------- Админ хуудас ---------- */
+let F = { q:"", cat:"", khoroo:"", status:"", sort:"name", dir:1 };
+
+function renderAdmin(){
+  const n = DB.orgs.length;
+  const act = DB.orgs.filter(o=>o.status==="Идэвхтэй").length;
+  const expiring = DB.orgs.filter(o=>{ const d=daysLeft(o.licEnd); return d!==null && d<=60; }).length;
+  const kh = new Set(DB.orgs.map(o=>o.khoroo)).size;
+
+  $("#view").innerHTML = `
+    <div class="strip">
+      <div><b class="num">${n}</b><span>Нийт бүртгэлтэй нэгж</span></div>
+      <div><b class="num">${act}</b><span>Идэвхтэй үйл ажиллагаатай</span></div>
+      <div><b class="num">${expiring}</b><span>Зөвшөөрөл дуусах / дууссан</span></div>
+      <div><b class="num">${kh}</b><span>Хамрагдсан хороо</span></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="field" style="flex:2"><label>Хайх</label><input id="fq" placeholder="нэр, бүртгэлийн дугаар, хаяг, захирал" value="${esc(F.q)}"></div>
+      <div class="field"><label>Чиглэл</label><select id="fcat"></select></div>
+      <div class="field"><label>Хороо</label><select id="fkh"></select></div>
+      <div class="field"><label>Төлөв</label><select id="fst"></select></div>
+      <button class="btn ghost" id="fclear">Шүүлт цэвэрлэх</button>
+      <button class="btn ghost" id="bcsv">CSV татах</button>
+      <button class="btn" id="badd">Байгууллага нэмэх</button>
+    </div>
+
+    <div class="panel">
+      <h3 id="listTitle"></h3>
+      <div class="tblwrap" id="tbl"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Үйл ажиллагааны чиглэлээр</h3>
+      <div class="body"><div class="bars" id="byCat"></div></div>
+    </div>
+    <div class="panel">
+      <h3>Хороогоор</h3>
+      <div class="body"><div class="bars" id="byKh"></div></div>
+    </div>
+  `;
+
+  fillSelect($("#fcat"), ["Бүгд", ...CATS], F.cat||"Бүгд");
+  fillSelect($("#fkh"), ["Бүгд", ...KHOROOS.map(k=>k+"-р хороо")], F.khoroo ? F.khoroo+"-р хороо" : "Бүгд");
+  fillSelect($("#fst"), ["Бүгд", ...STATUSES], F.status||"Бүгд");
+
+  $("#fq").oninput = e => { F.q=e.target.value; paintTable(); };
+  $("#fcat").onchange = e => { F.cat = e.target.value==="Бүгд"?"":e.target.value; paintTable(); };
+  $("#fkh").onchange  = e => { F.khoroo = e.target.value==="Бүгд"?"":parseInt(e.target.value); paintTable(); };
+  $("#fst").onchange  = e => { F.status = e.target.value==="Бүгд"?"":e.target.value; paintTable(); };
+  $("#fclear").onclick = () => { F={q:"",cat:"",khoroo:"",status:"",sort:F.sort,dir:F.dir}; renderAdmin(); };
+  $("#bcsv").onclick = () => exportCSV(filtered(), "khan_uul_bureeddel.csv");
+  $("#badd").onclick = () => orgForm(null);
+
+  paintTable(); paintBars();
+}
+
+function filtered(){
+  const q = F.q.trim().toLowerCase();
+  let list = DB.orgs.filter(o=>{
+    if(F.cat && o.cat!==F.cat) return false;
+    if(F.khoroo && Number(o.khoroo)!==F.khoroo) return false;
+    if(F.status && o.status!==F.status) return false;
+    if(q){
+      const hay = [o.name,o.reg,o.addr,o.dir,o.phone,o.cat,o.lic].join(" ").toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  list.sort((a,b)=>{
+    let x=a[F.sort]??"", y=b[F.sort]??"";
+    if(F.sort==="khoroo"||F.sort==="staff") { x=Number(x)||0; y=Number(y)||0; return (x-y)*F.dir; }
+    return String(x).localeCompare(String(y),"mn")*F.dir;
+  });
+  return list;
+}
+
+function paintTable(){
+  const list = filtered();
+  $("#listTitle").textContent = `Бүртгэлийн жагсаалт — ${list.length} нэгж`;
+  if(!list.length){ $("#tbl").innerHTML = `<div class="empty">Шүүлтэд тохирох бүртгэл олдсонгүй. Шүүлтээ өөрчилж үзнэ үү.</div>`; return; }
+  const th = (k,t)=>`<th class="sortable" data-k="${k}">${t}${F.sort===k?(F.dir>0?" ↑":" ↓"):""}</th>`;
+  $("#tbl").innerHTML = `
+    <table>
+      <thead><tr>
+        ${th("name","Байгууллага")}${th("cat","Чиглэл")}${th("khoroo","Хороо")}
+        <th>Хаяг</th>${th("staff","Ажилтан")}<th>Зөвшөөрөл</th>${th("status","Төлөв")}<th>Холбоо барих</th><th></th>
+      </tr></thead>
+      <tbody>${list.map(o=>`
+        <tr>
+          <td><div class="name">${esc(o.name)}</div><div class="reg">№${esc(o.reg)}</div></td>
+          <td>${esc(o.cat)}</td>
+          <td class="num">${esc(o.khoroo)}</td>
+          <td>${esc(o.addr)||'<span class="note">—</span>'}</td>
+          <td class="num">${esc(o.staff)||"—"}</td>
+          <td>${licPill(o)}</td>
+          <td>${statusPill(o.status)}</td>
+          <td>${esc(o.dir)}<div class="reg">${esc(o.phone)}</div></td>
+          <td><button class="btn ghost sm" data-open="${o.id}">Дэлгэрэнгүй</button></td>
+        </tr>`).join("")}
+      </tbody>
+    </table>`;
+  $("#tbl").querySelectorAll("th.sortable").forEach(h=>h.onclick=()=>{
+    const k=h.dataset.k; F.dir = (F.sort===k) ? -F.dir : 1; F.sort=k; paintTable();
+  });
+  $("#tbl").querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>detail(b.dataset.open));
+}
+
+function paintBars(){
+  const draw = (host, pairs) => {
+    const max = Math.max(1, ...pairs.map(p=>p[1]));
+    host.innerHTML = pairs.length ? pairs.map(([k,v])=>`
+      <div class="barrow"><span>${esc(k)}</span>
+        <span class="bartrack"><span class="barfill" style="width:${Math.round(v/max*100)}%"></span></span>
+        <i class="num">${v}</i></div>`).join("") : `<p class="note">Мэдээлэл алга.</p>`;
+  };
+  const count = key => {
+    const m = new Map();
+    DB.orgs.forEach(o=>m.set(o[key], (m.get(o[key])||0)+1));
+    return [...m.entries()].sort((a,b)=>b[1]-a[1]);
+  };
+  draw($("#byCat"), count("cat"));
+  draw($("#byKh"), count("khoroo").map(([k,v])=>[k+"-р хороо",v]).sort((a,b)=>b[1]-a[1]));
+}
+
+function detail(id){
+  const o = DB.orgs.find(x=>x.id===id); if(!o) return;
+  const nlist = (o.notices||[]).slice(0,6);
+  const body = `
+    <div id="admMedia"><p class="note">Зураг, баримт ачаалж байна…</p></div>
+    ${kvTable(o)}
+    <h3 style="font-size:14px;margin:18px 0 8px">Илгээсэн мэдэгдэл</h3>
+    ${nlist.length ? nlist.map(n=>`<div class="notice ${esc(n.kind)}"><div><div>${esc(n.text)}</div>
+      <div class="when">${esc(n.date)} · ${n.read?"уншсан":"уншаагүй"}</div></div></div>`).join("")
+      : `<p class="note">Мэдэгдэл илгээгээгүй байна.</p>`}
+  `;
+  openModal(o.name, body, [
+    {label:"Хаах", cls:"ghost", act:closeModal},
+    {label:"Устгах", cls:"danger", act:(btn)=>{
+      if(btn.dataset.armed){
+        DB.orgs = DB.orgs.filter(x=>x.id!==id);
+        DBX.delete(MKEY(id), true).catch(()=>{});
+        saveDB().then(()=>{ closeModal(); renderAdmin(); toast("Бүртгэлийг устгалаа."); });
+      } else { btn.dataset.armed="1"; btn.textContent="Устгахыг баталгаажуулах"; }
+    }},
+    {label:"Мэдэгдэл илгээх", cls:"ghost", act:()=>{ closeModal(); noticeForm(o); }},
+    {label:"Засах", cls:"", act:()=>{ closeModal(); orgForm(o); }}
+  ]);
+  paintAdminMedia(o);
+}
+
+async function paintAdminMedia(o){
+  const m = await loadMedia(o.id);
+  const host = $("#admMedia"); if(!host) return;
+  host.innerHTML = `
+    ${m.lic ? `<div class="filebox" style="margin-bottom:14px">
+        ${m.lic.data.startsWith("data:image") ? `<img src="${m.lic.data}" alt="Тусгай зөвшөөрөл">` : `<span>📄 ${esc(m.lic.name)}</span>`}
+        <div><div style="font-size:13px">Тусгай зөвшөөрлийн баримт</div>
+        <div class="note">Байршуулсан: ${esc(m.lic.at||"—")}</div>
+        <button class="btn ghost sm" id="admLicGet" style="margin-top:6px">Татаж авах</button></div>
+      </div>` : `<p class="note">Тусгай зөвшөөрлийн баримт байршуулаагүй.</p>`}
+    ${m.photos.length ? `<div class="gallery" style="margin-bottom:14px">${m.photos.map((p,i)=>`<div class="shot"><img src="${p}" alt="Зураг ${i+1}"></div>`).join("")}</div>`
+      : `<p class="note">Байгууллагын зураг оруулаагүй.</p>`}
+  `;
+  if($("#admLicGet")) $("#admLicGet").onclick = () => openData(m.lic.data, m.lic.name);
+}
+
+function noticeForm(o){
+  openModal(`Мэдэгдэл илгээх — ${o.name}`, `
+    <div class="field"><label>Төрөл</label><select id="n_kind">
+      <option value="info">Мэдээлэл</option><option value="warn">Анхааруулга</option><option value="bad">Шаардлага</option>
+    </select></div>
+    <div class="field"><label>Мэдэгдлийн агуулга</label><textarea id="n_text" rows="4" placeholder="Жишээ: Тусгай зөвшөөрлийн хуулбарыг 10 хоногийн дотор системд байршуулна уу."></textarea></div>
+    <p class="note">Мэдэгдэл тухайн байгууллагын хуудсанд шууд харагдана.</p>`, [
+    {label:"Болих", cls:"ghost", act:closeModal},
+    {label:"Илгээх", cls:"", act:async ()=>{
+      const t = $("#n_text").value.trim();
+      if(!t) return toast("Агуулгаа бичнэ үү.");
+      pushNotice(o, "adm:"+uid(), $("#n_kind").value, t);
+      await saveDB(); closeModal(); renderAdmin(); toast("Мэдэгдлийг илгээлээ.");
+    }}
+  ]);
+}
+
+/* ---------- Форм ---------- */
+function orgForm(o){
+  const isNew = !o;
+  const isAdmin = ME.role==="admin";
+  const v = o || { name:"",reg:"",cat:CATS[0],district:"Хан-Уул",khoroo:1,addr:"",area:"",staff:"",hours:"",lic:"",licEnd:"",dir:"",phone:"",mail:"",since:"",status:"Идэвхтэй",note:"" };
+  const body = `
+    <div class="two">
+      <div class="field"><label>Байгууллагын нэр</label><input id="e_name" value="${esc(v.name)}"></div>
+      <div class="field"><label>Улсын бүртгэлийн дугаар</label><input id="e_reg" value="${esc(v.reg)}" ${isAdmin?"":"disabled"}></div>
+    </div>
+    <div class="two">
+      <div class="field"><label>Үйл ажиллагааны чиглэл</label><select id="e_cat"></select></div>
+      <div class="field"><label>Хороо</label><select id="e_kh"></select></div>
+    </div>
+    <div class="field"><label>Дэлгэрэнгүй хаяг</label><input id="e_addr" value="${esc(v.addr)}"></div>
+    <div class="two">
+      <div class="field"><label>Талбай, м²</label><input id="e_area" type="number" min="0" value="${esc(v.area)}"></div>
+      <div class="field"><label>Ажиллагсдын тоо</label><input id="e_staff" type="number" min="0" value="${esc(v.staff)}"></div>
+    </div>
+    <div class="two">
+      <div class="field"><label>Ажиллах цагийн хуваарь</label><input id="e_hours" placeholder="09:00–21:00" value="${esc(v.hours)}"></div>
+      <div class="field"><label>Үйл ажиллагаа эхэлсэн огноо</label><input id="e_since" type="date" value="${esc(v.since)}"></div>
+    </div>
+    <div class="two">
+      <div class="field"><label>Тусгай зөвшөөрлийн дугаар</label><input id="e_lic" value="${esc(v.lic)}"></div>
+      <div class="field"><label>Зөвшөөрөл дуусах огноо</label><input id="e_licEnd" type="date" value="${esc(v.licEnd)}"></div>
+    </div>
+    <div class="two">
+      <div class="field"><label>Захирал / эзэмшигч</label><input id="e_dir" value="${esc(v.dir)}"></div>
+      <div class="field"><label>Утас</label><input id="e_phone" value="${esc(v.phone)}"></div>
+    </div>
+    <div class="two">
+      <div class="field"><label>И-мэйл</label><input id="e_mail" value="${esc(v.mail)}"></div>
+      <div class="field"><label>Төлөв</label><select id="e_status" ${isAdmin?"":"disabled"}></select></div>
+    </div>
+    <div class="field"><label>Тэмдэглэл</label><textarea id="e_note" rows="2">${esc(v.note)}</textarea></div>
+    ${isNew?`<div class="field"><label>Нууц үг (байгууллага нэвтрэхэд)</label><input id="e_pw" value="1234"></div>`:""}
+    ${isAdmin?"":`<p class="note">Бүртгэлийн дугаар, төлөвийг зөвхөн дүүргийн админ өөрчилнө.</p>`}
+  `;
+  openModal(isNew?"Шинэ байгууллага бүртгэх":"Мэдээлэл засах", body, [
+    {label:"Болих", cls:"ghost", act:closeModal},
+    {label:"Хадгалах", cls:"", act:async ()=>{
+      const name = $("#e_name").value.trim();
+      const reg = isAdmin ? $("#e_reg").value.trim() : v.reg;
+      if(!name || !reg) return toast("Нэр болон бүртгэлийн дугаарыг бөглөнө үү.");
+      if(DB.orgs.some(x=>x.reg===reg && x.id!==(o&&o.id))) return toast("Энэ бүртгэлийн дугаартай нэгж бүртгэлтэй байна.");
+      const data = {
+        name, reg, cat:$("#e_cat").value, district:"Хан-Уул", khoroo:Number($("#e_kh").value),
+        addr:$("#e_addr").value.trim(), area:$("#e_area").value, staff:$("#e_staff").value,
+        hours:$("#e_hours").value.trim(), since:$("#e_since").value, lic:$("#e_lic").value.trim(),
+        licEnd:$("#e_licEnd").value, dir:$("#e_dir").value.trim(), phone:$("#e_phone").value.trim(),
+        mail:$("#e_mail").value.trim(), status:isAdmin?$("#e_status").value:v.status, note:$("#e_note").value.trim()
+      };
+      if(isNew) DB.orgs.push({ id:uid(), ...data, pw:hash($("#e_pw").value||"1234"), created:today() });
+      else Object.assign(o, data);
+      await saveDB(); await ensureNotices(); closeModal(); render(); toast(isNew?"Бүртгэл нэмэгдлээ.":"Мэдээллийг шинэчиллээ.");
+    }}
+  ]);
+  fillSelect($("#e_cat"), CATS, v.cat);
+  fillSelect($("#e_kh"), KHOROOS.map(String), String(v.khoroo));
+  fillSelect($("#e_status"), STATUSES, v.status);
+}
+
+function pwForm(o){
+  openModal("Нууц үг солих", `
+    <div class="field"><label>Одоогийн нууц үг</label><input id="p_old" type="password"></div>
+    <div class="field"><label>Шинэ нууц үг</label><input id="p_new" type="password"></div>
+    <div class="field"><label>Шинэ нууц үг давтах</label><input id="p_new2" type="password"></div>`, [
+    {label:"Болих", cls:"ghost", act:closeModal},
+    {label:"Нууц үг солих", cls:"", act:async ()=>{
+      if(hash($("#p_old").value)!==o.pw) return toast("Одоогийн нууц үг буруу байна.");
+      if($("#p_new").value.length<4) return toast("Шинэ нууц үг дор хаяж 4 тэмдэгт байна.");
+      if($("#p_new").value!==$("#p_new2").value) return toast("Шинэ нууц үг таарахгүй байна.");
+      o.pw = hash($("#p_new").value); await saveDB(); closeModal(); toast("Нууц үг солигдлоо.");
+    }}
+  ]);
+}
+
+/* ---------- Модал ---------- */
+function openModal(title, body, buttons){
+  $("#modalHost").innerHTML = `
+    <div class="modal-bg"><div class="modal">
+      <h3>${esc(title)}<button class="x" id="mx">×</button></h3>
+      <div class="body">${body}</div>
+      <div class="foot">${buttons.map((b,i)=>`<button class="btn ${b.cls}" data-i="${i}">${esc(b.label)}</button>`).join("")}</div>
+    </div></div>`;
+  $("#mx").onclick = closeModal;
+  $("#modalHost").querySelector(".modal-bg").onclick = e => { if(e.target.classList.contains("modal-bg")) closeModal(); };
+  $("#modalHost").querySelectorAll(".foot .btn").forEach(btn=>btn.onclick=()=>buttons[+btn.dataset.i].act(btn));
+}
+function closeModal(){ $("#modalHost").innerHTML=""; }
+document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); });
+
+/* ---------- CSV ---------- */
+function exportCSV(list, filename){
+  const cols = [
+    ["Байгууллагын нэр","name"],["Улсын бүртгэлийн дугаар","reg"],["Үйл ажиллагааны чиглэл","cat"],
+    ["Дүүрэг","district"],["Хороо","khoroo"],["Хаяг","addr"],["Талбай (м²)","area"],["Ажиллагсдын тоо","staff"],
+    ["Ажиллах цаг","hours"],["Тусгай зөвшөөрөл","lic"],["Зөвшөөрөл дуусах","licEnd"],["Захирал","dir"],
+    ["Утас","phone"],["И-мэйл","mail"],["Эхэлсэн огноо","since"],["Төлөв","status"],["Тэмдэглэл","note"],["Бүртгэсэн огноо","created"]
+  ];
+  const q = s => `"${String(s??"").replace(/"/g,'""')}"`;
+  const csv = "\uFEFF" + [cols.map(c=>q(c[0])).join(",")]
+    .concat(list.map(o=>cols.map(c=>q(o[c[1]])).join(","))).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], {type:"text/csv;charset=utf-8;"}));
+  const a = document.createElement("a"); a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+  toast(`${list.length} мөр татагдлаа.`);
+}
+
+/* ---------- Эхлүүлэх ---------- */
+(async function init(){
+  fillSelect($("#rg_cat"), CATS);
+  fillSelect($("#rg_khoroo"), KHOROOS.map(k=>String(k)));
+  await loadDB();
+  await ensureNotices();
+  renderAuthStats();
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Хан-Уул дүүрэг — Аж ахуйн нэгжийн бүртгэл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ======================= НЭВТРЭХ ======================= -->
+<div id="auth">
+  <div class="auth-brand">
+    <div>
+      <span class="kicker">Хан-Уул дүүрэг · Улаанбаатар хот</span>
+      <h1>Аж ахуйн нэгж,<br>байгууллагын бүртгэл</h1>
+      <p>Эмийн сан, баар, караоке, дэлгүүр, үйлчилгээний газар — дүүрэгт үйл ажиллагаа явуулж буй бүх нэгжийн нэгдсэн мэдээллийн сан.</p>
+    </div>
+    <div class="stat-rows" id="authStats"></div>
+  </div>
+
+  <div class="auth-panel">
+    <div class="auth-card">
+      <div class="tabs">
+        <button class="tab on" data-tab="login">Байгууллага</button>
+        <button class="tab" data-tab="reg">Бүртгүүлэх</button>
+        <button class="tab" data-tab="admin">Админ</button>
+      </div>
+      <div id="authMsg"></div>
+
+      <form id="fLogin" class="pane">
+        <div class="field"><label>Улсын бүртгэлийн дугаар</label><input id="li_reg" placeholder="жишээ: 6123456" required></div>
+        <div class="field"><label>Нууц үг</label><input id="li_pw" type="password" required></div>
+        <button class="btn" style="width:100%">Нэвтрэх</button>
+        <div class="hint">Туршилтын бүртгэлүүдийн нууц үг: <b>1234</b></div>
+      </form>
+
+      <form id="fReg" class="pane hidden">
+        <div class="field"><label>Байгууллагын нэр</label><input id="rg_name" required></div>
+        <div class="two">
+          <div class="field"><label>Улсын бүртгэлийн дугаар</label><input id="rg_reg" required></div>
+          <div class="field"><label>Үйл ажиллагааны чиглэл</label><select id="rg_cat"></select></div>
+        </div>
+        <div class="two">
+          <div class="field"><label>Хороо</label><select id="rg_khoroo"></select></div>
+          <div class="field"><label>Холбоо барих утас</label><input id="rg_phone" required></div>
+        </div>
+        <div class="field"><label>Дэлгэрэнгүй хаяг</label><input id="rg_addr" placeholder="гудамж, байр, тоот"></div>
+        <div class="two">
+          <div class="field"><label>Нууц үг</label><input id="rg_pw" type="password" required></div>
+          <div class="field"><label>Нууц үг давтах</label><input id="rg_pw2" type="password" required></div>
+        </div>
+        <button class="btn" style="width:100%">Бүртгүүлэх</button>
+        <div class="hint">Бүртгүүлсний дараа үлдсэн мэдээлэл, зураг, зөвшөөрлөө өөрийн хуудаснаас оруулна.</div>
+      </form>
+
+      <form id="fAdmin" class="pane hidden">
+        <div class="field"><label>Админ код</label><input id="ad_user" required></div>
+        <div class="field"><label>Нууц үг</label><input id="ad_pw" type="password" required></div>
+        <button class="btn" style="width:100%">Нэвтрэх</button>
+        <div class="hint">Туршилтын админ: <b>admin</b> / <b>khanuul2026</b></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= АПП ======================= -->
+<div id="app" class="hidden">
+  <header class="bar">
+    <div>
+      <h2>Хан-Уул дүүрэг — Аж ахуйн нэгжийн бүртгэл</h2>
+      <div class="sub" id="roleLine"></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="who" id="whoBox"></div>
+    <button class="btn ghost sm" id="btnOut">Гарах</button>
+  </header>
+  <main id="view"></main>
+</div>
+
+<div id="modalHost"></div>
+<div id="toastHost"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
