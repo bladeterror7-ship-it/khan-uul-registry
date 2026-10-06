@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Хан-Уул дүүрэг — Аж ахуйн нэгжийн бүртгэл</title>
+<title>Хан-Уул дүүргийн 2-р хэлтсийн хариуцсан хороодын ААНБ-н нэгдсэн мэдээллийн сан</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,9 +15,9 @@
 <div id="auth">
   <div class="auth-brand">
     <div>
-      <span class="kicker">Хан-Уул дүүрэг · Улаанбаатар хот</span>
-      <h1>Аж ахуйн нэгж,<br>байгууллагын бүртгэл</h1>
-      <p>Эмийн сан, баар, караоке, дэлгүүр, үйлчилгээний газар — дүүрэгт үйл ажиллагаа явуулж буй бүх нэгжийн нэгдсэн мэдээллийн сан.</p>
+      <span class="kicker">Хан-Уул дүүрэг · 2-р хэлтэс · Улаанбаатар хот</span>
+      <h1>2-р хэлтсийн хариуцсан<br>хороодын ААНБ-н<br>нэгдсэн мэдээллийн сан</h1>
+      <p>Эмийн сан, баар, караоке, дэлгүүр, СӨХ, сургууль, цэцэрлэг, үйлчилгээний газар — хариуцсан хороодод үйл ажиллагаа явуулж буй бүх аж ахуйн нэгж, байгууллагын нэгдсэн бүртгэл.</p>
     </div>
     <div class="stat-rows" id="authStats"></div>
   </div>
@@ -32,7 +32,7 @@
       <div id="authMsg"></div>
 
       <form id="fLogin" class="pane">
-        <div class="field"><label>Улсын бүртгэлийн дугаар</label><input id="li_reg" placeholder="жишээ: 6123456" required></div>
+        <div class="field"><label>Байгууллагын регистр</label><input id="li_reg" placeholder="жишээ: 6123456" required></div>
         <div class="field"><label>Нууц үг</label><input id="li_pw" type="password" required></div>
         <button class="btn" style="width:100%">Нэвтрэх</button>
         <div class="hint">Туршилтын бүртгэлүүдийн нууц үг: <b>1234</b></div>
@@ -41,7 +41,7 @@
       <form id="fReg" class="pane hidden">
         <div class="field"><label>Байгууллагын нэр</label><input id="rg_name" required></div>
         <div class="two">
-          <div class="field"><label>Улсын бүртгэлийн дугаар</label><input id="rg_reg" required></div>
+          <div class="field"><label>Байгууллагын регистр</label><input id="rg_reg" required></div>
           <div class="field"><label>Үйл ажиллагааны чиглэл</label><select id="rg_cat"></select></div>
         </div>
         <div class="two">
@@ -54,11 +54,15 @@
         </div>
         <div class="field"><label>Дэлгэрэнгүй хаяг</label><input id="rg_addr" placeholder="гудамж, байр, тоот"></div>
         <div class="two">
+          <div class="field"><label>Өргөрөг (latitude)</label><input id="rg_lat" placeholder="47.906412"></div>
+          <div class="field"><label>Уртраг (longitude)</label><input id="rg_lng" placeholder="106.907318"></div>
+        </div>
+        <div class="two">
           <div class="field"><label>Нууц үг</label><input id="rg_pw" type="password" required></div>
           <div class="field"><label>Нууц үг давтах</label><input id="rg_pw2" type="password" required></div>
         </div>
         <button class="btn" style="width:100%">Хүсэлт илгээх</button>
-        <div class="hint">Хүсэлтийг дүүргийн админ хянаж зөвшөөрнө. Хүлээгдэж байх хугацаанд нэвтэрч мэдээлэл, зураг, зөвшөөрлийн баримтаа оруулж болно.</div>
+        <div class="hint">Өргөрөг, уртрагийг Google Maps дээр байршлаа дараад хуулж авна. Хүсэлтийг 2-р хэлтсийн админ хянаж зөвшөөрнө. Хүлээгдэж байх хугацаанд нэвтэрч мэдээлэл, зураг, зөвшөөрлийн баримтаа оруулж болно.</div>
       </form>
 
       <form id="fAdmin" class="pane hidden">
@@ -75,7 +79,7 @@
 <div id="app" class="hidden">
   <header class="bar">
     <div>
-      <h2>Хан-Уул дүүрэг — Аж ахуйн нэгжийн бүртгэл</h2>
+      <h2>Хан-Уул дүүрэг — 2-р хэлтсийн ААНБ-н нэгдсэн мэдээллийн сан</h2>
       <div class="sub" id="roleLine"></div>
     </div>
     <div class="spacer"></div>
