@@ -329,7 +329,7 @@ dl.kv dt:last-of-type,dl.kv dd:last-of-type{border-bottom:none}
         <div class="field"><label>Байгууллагын регистр</label><input id="li_reg" placeholder="жишээ: 6123456" required></div>
         <div class="field"><label>Нууц үг</label><input id="li_pw" type="password" required></div>
         <button class="btn" style="width:100%">Нэвтрэх</button>
-        <div class="hint">Туршилтын бүртгэлүүдийн нууц үг: <b>1234</b></div>
+        <div class="hint">Бүртгэлгүй бол “Бүртгүүлэх” хэсгээр хүсэлт илгээнэ үү.</div>
       </form>
 
       <form id="fReg" class="pane hidden">
@@ -363,7 +363,7 @@ dl.kv dt:last-of-type,dl.kv dd:last-of-type{border-bottom:none}
         <div class="field"><label>Админ код</label><input id="ad_user" required></div>
         <div class="field"><label>Нууц үг</label><input id="ad_pw" type="password" required></div>
         <button class="btn" style="width:100%">Нэвтрэх</button>
-        <div class="hint">Туршилтын админ: <b>admin</b> / <b>khanuul2026</b></div>
+        <div class="hint">Зөвхөн 2-р хэлтсийн эрх бүхий ажилтан нэвтэрнэ.</div>
       </form>
     </div>
   </div>
@@ -411,7 +411,7 @@ const DBX = (() => {
 })();
 
 /* ============ Тогтмолууд ============ */
-const KEY   = "khanuul_registry_v2";
+const KEY   = "khanuul_registry_v3";
 const ADMIN = { user:"admin", pw:"khanuul2026" };
 
 /* Системийн албан ёсны нэршил */
@@ -498,59 +498,6 @@ function attachPwToggles(root){
 let DB = { orgs: [] };
 let ME = null;   // {role:'admin'} эсвэл {role:'org', id}
 
-function seed(){
-  const mk = (name,reg,cat,own,kh,addr,area,staff,hours,lic,licEnd,dir,phone,mail,since,status,appr)=>({
-    id:uid(), name, reg, cat, own, district:"Хан-Уул", khoroo:kh, addr, lat:"", lng:"", area, staff, hours,
-    lic, licEnd, dir, phone, mail, since, status, note:"",
-    appr, apprAt: appr==="ok" ? today() : "", apprNote:"",
-    pw:hash("1234"), created:today(), notices:[]
-  });
-  return [
-    mk("Ай Эм Си Фарм ХХК","6123456","Эмийн сан","Хувийн",3,"Чингисийн өргөн чөлөө 15, Наран төв 1 давхар",48,6,"09:00–21:00","ЭМ-2024/1187","2027-03-01","Б.Оюунчимэг","99112233","imcpharm@mail.mn","2019-05-14","Идэвхтэй","ok"),
-    mk("Найт Стар Энтертайнмент ХХК","6234117","Караоке","Хувийн",11,"120 мянгат, Сүлд төвийн 2 давхар",210,14,"18:00–02:00","ХУД-2025/0442","2026-09-01","Д.Ганзориг","88445566","nightstar@mail.mn","2021-09-02","Идэвхтэй","ok"),
-    mk("Зайсан Паб ХХК","6091834","Баар / паб","Хувийн",15,"Зайсангийн гудамж 4, 1-р байр",95,9,"12:00–00:00","ХУД-2024/0311","2026-10-05","Ч.Тэмүүлэн","94002211","zaisanpub@mail.mn","2018-06-11","Идэвхтэй","ok"),
-    mk("Оргил Март ХХК","6455012","Хүнсний дэлгүүр (8 нэрийн)","Хувийн",4,"Яармагийн 2-р гудамж 21",130,11,"08:00–23:00","ХУД-2025/0908","2027-01-15","Н.Алтанцэцэг","95778899","orgilmart@mail.mn","2020-02-20","Идэвхтэй","ok"),
-    mk("Толгойт Авто Худалдаа ХХК","6300945","Авто худалдаа","Хувийн",8,"Үйлдвэрийн бүс, 7-р гудамж 12",1450,17,"09:00–19:00","","","Ж.Батсайхан","99887744","autotrade@mail.mn","2017-11-30","Идэвхтэй","ok"),
-    mk("Хан-Уул дүүргийн 63-р сургууль","9010063","Ерөнхий боловсролын сургууль","Төрийн өмчит",20,"Их наяд, 63-р сургуулийн байр",6200,112,"07:30–19:00","","","С.Мөнхзул","80223344","school63@edu.mn","1998-09-01","Идэвхтэй","ok"),
-    mk("Оргилуун Ундрага ББСБ ХХК","6688120","Банк бус санхүүгийн байгууллага, ломбард","Хувийн",3,"Чингисийн өргөн чөлөө 9, Сансар төв",75,8,"09:00–18:00","СЗХ-2025/0117","2028-02-01","Г.Энхжаргал","94551122","undraga@mail.mn","2023-03-15","Идэвхтэй","ok"),
-    mk("Жаргалант Саун ХХК","6777301","Саун, массаж","Хувийн",11,"11-р хороо, 3-р хэсэг, 14-р байр",180,7,"10:00–23:00","","","Л.Отгонбаяр","99445511","jargalantsaun@mail.mn","2024-07-01","Идэвхтэй","pending")
-  ].map(o=>{
-    const cams = { "6123456":[2,4], "6234117":[4,12], "6091834":[3,8], "6455012":[2,6],
-                   "6300945":[6,9], "9010063":[14,42], "6688120":[3,7], "6777301":[4,5] };
-    const c = cams[o.reg] || [0,0];
-    o.camOut = c[0]; o.camIn = c[1];
-    const geo = { "6123456":["47.906412","106.907318"], "6234117":["47.883150","106.861204"],
-                  "6091834":["47.880742","106.922561"], "6455012":["47.869930","106.835177"],
-                  "6300945":["47.892215","106.943860"], "9010063":["47.898604","106.879432"],
-                  "6688120":["47.909873","106.912045"], "6777301":["47.884026","106.858911"] };
-    const g = geo[o.reg] || ["",""];
-    o.lat = g[0]; o.lng = g[1];
-    return o;
-  });
-}
-
-async function seedStaff(){
-  const demo = [
-    ["6123456", [
-      ["Б.Оюунчимэг","Захирал","99112233","2019-05-14","УБ85031012","Хан-Уул дүүрэг, 3-р хороо, 19-р хороолол, 8-р байр, 24 тоот"],
-      ["Э.Сарантуяа","Эм зүйч","99445566","2021-03-01","УБ92071533","Хан-Уул дүүрэг, 4-р хороо, Яармаг, 12-р гудамж, 7 тоот"],
-      ["Т.Ганцэцэг","Худалдагч","88112244","2024-01-15","УБ98120477","Баянгол дүүрэг, 16-р хороо, 3-р хороолол, 41-р байр, 12 тоот"]
-    ]],
-    ["6455012", [
-      ["Н.Алтанцэцэг","Захирал","95778899","2020-02-20","УБ87042866","Хан-Уул дүүрэг, 4-р хороо, Яармаг, 2-р гудамж 21"],
-      ["Д.Батзориг","Кассчин","94223311","2023-06-10","УБ95103199","Хан-Уул дүүрэг, 8-р хороо, Үйлдвэрийн бүс, 5-р байр, 33 тоот"]
-    ]]
-  ];
-  for(const [reg, people] of demo){
-    const o = DB.orgs.find(x=>x.reg===reg); if(!o) continue;
-    const list = people.map(([name,pos,phone,since,rd,addr])=>({
-      id:uid(), name, pos, reg:rd, phone, since, addr,
-      status:"Ажиллаж байгаа", note:"", created:today()
-    }));
-    try{ await saveStaff(o.id, list, o); }catch(e){}
-  }
-}
-
 async function loadDB(){
   try{
     const r = await DBX.get(KEY, true);
@@ -563,8 +510,9 @@ async function loadDB(){
       if(CAT_MIGRATE[o.cat]) o.cat = CAT_MIGRATE[o.cat];
     });
   }catch(e){
-    DB = { orgs: seed() };
-    try{ await saveDB(); await seedStaff(); }catch(_){}
+    /* Анх удаа нээгдэж байна — хоосон бүртгэлээр эхэлнэ */
+    DB = { orgs: [] };
+    try{ await saveDB(); }catch(_){}
   }
 }
 async function saveDB(){
@@ -1177,7 +1125,13 @@ function filtered(){
 function paintTable(){
   const list = filtered();
   $("#listTitle").textContent = `Бүртгэлийн жагсаалт — ${list.length} нэгж`;
-  if(!list.length){ $("#tbl").innerHTML = `<div class="empty">Шүүлтэд тохирох бүртгэл олдсонгүй. Шүүлтээ өөрчилж үзнэ үү.</div>`; return; }
+  if(!list.length){
+    const anyFilter = F.q || F.cat || F.own || F.khoroo || F.status || F.appr;
+    $("#tbl").innerHTML = DB.orgs.length
+      ? `<div class="empty">${anyFilter ? "Шүүлтэд тохирох бүртгэл олдсонгүй. Шүүлтээ өөрчилж үзнэ үү." : "Бүртгэл алга байна."}</div>`
+      : `<div class="empty">Одоогоор бүртгэгдсэн аж ахуйн нэгж алга байна.<br>“Байгууллага нэмэх” товчоор шууд бүртгэх, эсвэл байгууллага өөрөө “Бүртгүүлэх” хэсгээр хүсэлт илгээх боломжтой.</div>`;
+    return;
+  }
   const th = (k,t)=>`<th class="sortable" data-k="${k}">${t}${F.sort===k?(F.dir>0?" ↑":" ↓"):""}</th>`;
   $("#tbl").innerHTML = `
     <table>
