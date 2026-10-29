@@ -133,7 +133,64 @@ function attachPwToggles(root){
 
 /* ============ Өгөгдөл ============ */
 let DB = { orgs: [] };
-let ME = null;   // {role:'admin'} эсвэл {role:'org', id}
+let ME = null;      // {role:'admin', user} эсвэл {role:'org', id}
+let LOCKED = false; // заавал бөглөх цонх нээлттэй үед хаахыг хориглоно
+
+/* ============================================================
+   ҮЙЛ АЖИЛЛАГААНЫ ЖУРНАЛ
+   Зөвхөн нэмэгдэнэ — устгах, засах товч байхгүй.
+   Бичлэг бүр өмнөхийнхөө хураангуйг агуулсан гинжин холбоотой тул
+   дараа нь гараар өөрчилбөл «шалгах» товч дарахад илэрнэ.
+   ============================================================ */
+const AKEY = "khanuul_audit";
+const AUDIT_MAX = 3000;
+let AUDIT = null;   // { a:"анкер хураангуй", v:[бичлэгүүд] }
+
+async function loadAudit(){
+  if(AUDIT) return AUDIT;
+  try{
+    const o = JSON.parse((await DBX.get(AKEY, true)).value);
+    AUDIT = (o && Array.isArray(o.v)) ? o : { a:"0", v:[] };
+  }catch(e){ AUDIT = { a:"0", v:[] }; }
+  return AUDIT;
+}
+function stampNow(){
+  const d = new Date(), p = n => String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+const auditLine = (prev, e) => `${prev}|${e.t}|${e.who}|${e.name}|${e.act}|${e.target}|${e.info}`;
+
+async function logAct(act, target, info){
+  const A = await loadAudit();
+  const org = (ME && ME.role==="org") ? DB.orgs.find(x=>x.id===ME.id) : null;
+  const e = {
+    t: stampNow(),
+    who: ME ? (ME.role==="admin" ? "Админ" : "Байгууллага") : "Зочин",
+    name: ME ? (ME.role==="admin" ? (ME.name || ME.user) : (org ? `${org.name} (№${org.reg})` : "")) : "",
+    act: act || "", target: target || "", info: info || ""
+  };
+  const prev = A.v.length ? A.v[A.v.length-1].h : A.a;
+  e.h = await sha(auditLine(prev, e));
+  A.v.push(e);
+  if(A.v.length > AUDIT_MAX){
+    const cut = A.v.splice(0, A.v.length - AUDIT_MAX);
+    A.a = cut[cut.length-1].h;          // таслагдсан хэсгийн төгсгөлийг анкер болгоно
+  }
+  try{ await DBX.set(AKEY, JSON.stringify(A), true); }catch(err){}
+  if(ME && ME.role==="admin" && document.getElementById("agBox")) paintAudit();
+}
+
+/* Гинжин холбоог шалгах — анхны эвдэрсэн бичлэгийн дугаарыг буцаана, эсвэл -1 */
+async function verifyAudit(){
+  const A = await loadAudit();
+  let prev = A.a;
+  for(let i=0;i<A.v.length;i++){
+    const e = A.v[i];
+    if(await sha(auditLine(prev, e)) !== e.h) return i;
+    prev = e.h;
+  }
+  return -1;
+}
 
 async function loadDB(){
   try{
@@ -156,7 +213,7 @@ async function loadDB(){
 /* Админы эрхүүдийг анх удаа үүсгэх. Хуучин нэг эрхийн нууц үг байвал «admin»-д шилжүүлнэ. */
 function seedAdmins(){
   if(Array.isArray(DB.admins) && DB.admins.length) return false;
-  DB.admins = ADMIN_SEED.map(a => ({ ...a, created:today(), changed:"" }));
+  DB.admins = ADMIN_SEED.map(a => ({ ...a, created:today(), changed:"", mustPw:true }));
   if(DB.adminPw){
     const a = DB.admins.find(x=>x.user==="admin");
     if(a){ a.pw = DB.adminPw; a.changed = today(); }
@@ -324,7 +381,9 @@ $("#fLogin").onsubmit = async e => {
   const v = o ? await pwVerify(o.pw, pw) : false;
   if(!v) return authMsg("Байгууллагын регистр эсвэл нууц үг буруу байна.");
   if(v==="legacy"){ o.pw = await sha(pw); try{ await saveDB(); }catch(_){} }
-  ME = { role:"org", id:o.id }; enterApp();
+  ME = { role:"org", id:o.id };
+  await logAct("Нэвтэрсэн");
+  enterApp();
 };
 
 $("#fReg").onsubmit = async e => {
@@ -348,6 +407,7 @@ $("#fReg").onsubmit = async e => {
     "Бүртгүүлэх хүсэлт хүлээн авлаа. Хан-Уул дүүргийн 2-р хэлтсийн бүртгэлийн алба хянаж, зөвшөөрөл олгосны дараа таны бүртгэл системд бүрэн идэвхжинэ. Хүлээгдэж байх хугацаанд мэдээлэл, зураг, зөвшөөрлийн баримтаа оруулж болно.");
   DB.orgs.push(o); await saveDB();
   ME = { role:"org", id:o.id }; enterApp();
+  await logAct("Бүртгүүлэх хүсэлт илгээсэн");
   toast("Хүсэлт илгээгдлээ. Админы зөвшөөрлийг хүлээнэ үү.");
 };
 
@@ -357,17 +417,67 @@ $("#fAdmin").onsubmit = async e => {
   const a = (DB.admins||[]).find(x => x.user.toLowerCase() === u);
   const got = await sha($("#ad_pw").value);
   if(!a || got !== a.pw) return authMsg("Админ код эсвэл нууц үг буруу байна.");
-  ME = { role:"admin", user:a.user, name:a.name, rank:a.rank }; enterApp();
+  ME = { role:"admin", user:a.user, name:a.name, rank:a.rank };
+  await logAct("Нэвтэрсэн");
+  enterApp();
 };
 
-$("#btnOut").onclick = () => {
-  ME = null; $("#app").classList.add("hidden"); $("#auth").classList.remove("hidden");
-  $("#li_pw").value=""; $("#ad_pw").value=""; renderAuthStats(); authMsg("");
-};
+$("#btnOut").onclick = async () => { await logAct("Гарсан"); doLogout(false); };
+
+function doLogout(auto){
+  ME = null; LOCKED = false; closeModal();
+  clearInterval(idleTimer); idleTimer = null;
+  $("#app").classList.add("hidden"); $("#auth").classList.remove("hidden");
+  $("#li_pw").value=""; $("#ad_pw").value=""; renderAuthStats();
+  authMsg(auto ? "15 минут идэвхгүй байсан тул системээс автоматаар гарлаа. Дахин нэвтэрнэ үү." : "");
+}
 
 function enterApp(){
   $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
   render();
+  touchAct(); startIdle();
+  const ent = ME.role==="admin" ? meAdmin() : DB.orgs.find(x=>x.id===ME.id);
+  if(ent && ent.mustPw) forcePwForm(ent);
+}
+
+/* ============ Идэвхгүй байвал автоматаар гарах ============ */
+const IDLE_MS = 15*60*1000, IDLE_WARN = 60*1000;
+let lastAct = Date.now(), idleTimer = null, idleWarned = false;
+function touchAct(){ lastAct = Date.now(); idleWarned = false; }
+["mousemove","mousedown","keydown","scroll","touchstart","click"]
+  .forEach(ev => document.addEventListener(ev, touchAct, { passive:true }));
+function startIdle(){
+  clearInterval(idleTimer);
+  idleTimer = setInterval(async ()=>{
+    if(!ME) return;
+    const left = IDLE_MS - (Date.now() - lastAct);
+    if(left <= 0){ await logAct("Идэвхгүй байдлаас автоматаар гарсан"); doLogout(true); }
+    else if(left <= IDLE_WARN && !idleWarned){
+      idleWarned = true;
+      toast("Идэвхгүй байдлаас болж 1 минутын дараа автоматаар гарна.");
+    }
+  }, 10000);
+}
+
+/* ============ Анхны нууц үгийг заавал солиулах ============ */
+function forcePwForm(ent){
+  openModal("Нууц үгээ заавал солино уу", `
+    <div class="msg err">Та анхны буюу сэргээсэн нууц үгээр нэвтэрлээ. Үргэлжлүүлэхийн тулд өөрийн шинэ нууц үгийг тохируулна уу.</div>
+    <div class="field"><label>Шинэ нууц үг</label><input id="f_new" type="password"></div>
+    <div class="field"><label>Шинэ нууц үг давтах</label><input id="f_new2" type="password"></div>
+    <p class="note">Дор хаяж 6 тэмдэгт. Хуучин нууц үгээсээ өөр байх ёстой. Энэ нууц үгийг хэнд ч бүү хэлээрэй — журналд таны нэрээр бүх үйлдэл бичигдэнэ.</p>`, [
+    {label:"Гарах", cls:"ghost", act:async ()=>{ LOCKED=false; await logAct("Нууц үг солилгүй гарсан"); doLogout(false); }},
+    {label:"Хадгалах", cls:"", act:async ()=>{
+      const p1 = $("#f_new").value, p2 = $("#f_new2").value;
+      if(p1.length < 6) return toast("Нууц үг дор хаяж 6 тэмдэгт байна.");
+      if(p1 !== p2) return toast("Нууц үг таарахгүй байна.");
+      if(await sha(p1) === ent.pw) return toast("Хуучин нууц үгээсээ өөр байх ёстой.");
+      ent.pw = await sha(p1); ent.mustPw = false;
+      if("changed" in ent) ent.changed = today();
+      await saveDB(); await logAct("Анхны нууц үгээ сольсон");
+      LOCKED = false; closeModal(); render(); toast("Нууц үг тохирлоо.");
+    }}
+  ], true);
 }
 
 /* ============ Дүрслэл ============ */
@@ -690,6 +800,26 @@ function renderAdmin(){
     </div>
 
     <div class="panel">
+      <h3>Үйл ажиллагааны журнал</h3>
+      <div class="body">
+        <div class="khoroo-pick" style="justify-content:space-between">
+          <div class="field" style="flex:1;max-width:340px"><label>Шүүх</label>
+            <input id="agq" placeholder="нэр, үйлдэл, байгууллага, огноо"></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <button class="btn ghost sm" id="agChk">Бүрэн бүтэн байдлыг шалгах</button>
+            <button class="btn ghost sm" id="agCsv">Журнал татах</button>
+          </div>
+        </div>
+        <div id="agMsg"></div>
+        <div class="tblwrap" id="agBox"></div>
+        <p class="note" style="margin-top:11px">
+          Журнал зөвхөн нэмэгддэг — устгах, засах товч байхгүй. Бичлэг бүр өмнөхийнхөө хураангуйг агуулсан
+          гинжин холбоотой тул гараар өөрчилбөл «Бүрэн бүтэн байдлыг шалгах» дарахад илэрнэ.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
       <h3>Газрын зураг</h3>
       <div class="body">
         <div id="map" style="height:470px;border:1px solid var(--line);border-radius:8px"></div>
@@ -769,13 +899,18 @@ function renderAdmin(){
   $("#bTpl").onclick     = () => csvTemplate();
   $("#bAdmPw").onclick   = () => adminPwForm();
   $("#bAdmAdd").onclick  = () => adminAddForm();
+
+  $("#agq").value   = AGQ;
+  $("#agq").oninput = e => { AGQ = e.target.value; paintAudit(); };
+  $("#agChk").onclick = () => checkAudit();
+  $("#agCsv").onclick = () => exportAudit();
   $("#bRestore").onchange = e => { const f = e.target.files[0]; e.target.value = ""; if(f) restoreAll(f); };
   $("#bImport").onchange  = e => { const f = e.target.files[0]; e.target.value = ""; if(f) importCSV(f); };
 
   fillSelect($("#khSel"), ["— сонгох —", ...KHOROOS.map(k=>k+"-р хороо")], KH || "— сонгох —");
   $("#khSel").onchange = e => { KH = e.target.value==="— сонгох —" ? "" : e.target.value; paintKhoroo(); };
 
-  paintTable(); paintKhoroo(); paintBars(); paintStorage(); paintAdmins();
+  paintTable(); paintKhoroo(); paintBars(); paintStorage(); paintAdmins(); paintAudit();
 }
 
 async function approveOrg(id){
@@ -783,7 +918,9 @@ async function approveOrg(id){
   o.appr = "ok"; o.apprAt = today(); o.apprNote = "";
   pushNotice(o, "appr:"+today()+":"+o.id, "info",
     "Бүртгэлийн хүсэлт зөвшөөрөгдлөө. Таны байгууллага 2-р хэлтсийн хариуцсан хороодын ААНБ-н нэгдсэн мэдээллийн санд албан ёсоор бүртгэгдлээ. Мэдээллээ бүрэн гүйцэд байлгаж, зөвшөөрлийн хугацааг хянаж байхыг анхаарна уу.");
-  await saveDB(); await ensureNotices(); render(); toast("Зөвшөөрөл олголоо.");
+  await saveDB(); await ensureNotices();
+  await logAct("Бүртгэл зөвшөөрсөн", `${o.name} (№${o.reg})`);
+  render(); toast("Зөвшөөрөл олголоо.");
 }
 
 function rejectForm(id){
@@ -798,7 +935,8 @@ function rejectForm(id){
       if(!t) return toast("Шалтгаанаа бичнэ үү.");
       o.appr = "rejected"; o.apprNote = t;
       pushNotice(o, "rej:"+uid(), "bad", "Бүртгэлийн хүсэлтийг татгалзлаа. Шалтгаан: " + t);
-      await saveDB(); closeModal(); render(); toast("Хүсэлтийг татгалзлаа.");
+      await saveDB(); await logAct("Бүртгэл татгалзсан", `${o.name} (№${o.reg})`, t);
+      closeModal(); render(); toast("Хүсэлтийг татгалзлаа.");
     }}
   ]);
 }
@@ -934,13 +1072,15 @@ function detail(id){
         DBX.delete(MKEY(id), true).catch(()=>{});
         DBX.delete(SKEY(id), true).catch(()=>{});
         delete mediaCache[id]; delete staffCache[id];
-        saveDB().then(()=>{ closeModal(); render(); toast("Бүртгэлийг устгалаа."); });
+        saveDB().then(async ()=>{ await logAct("Бүртгэл устгасан", `${o.name} (№${o.reg})`);
+          closeModal(); render(); toast("Бүртгэлийг устгалаа."); });
       } else { btn.dataset.armed="1"; btn.textContent="Устгахыг баталгаажуулах"; }
     }},
     {label:"Нууц үг сэргээх", cls:"ghost", act:async ()=>{
-      o.pw = await sha("1234");
-      pushNotice(o, "pw:"+uid(), "info", "Админ таны нууц үгийг 1234 болгон сэргээлээ. Нэвтэрсний дараа шинэ нууц үг тохируулна уу.");
-      await saveDB(); closeModal(); render(); toast("Нууц үгийг 1234 болголоо.");
+      o.pw = await sha("1234"); o.mustPw = true;
+      pushNotice(o, "pw:"+uid(), "info", "Админ таны нууц үгийг 1234 болгон сэргээлээ. Нэвтэрмэгц шинэ нууц үг заавал тохируулна.");
+      await saveDB(); await logAct("Байгууллагын нууц үг сэргээсэн", o.name);
+      closeModal(); render(); toast("Нууц үгийг 1234 болголоо.");
     }},
     {label:"Анкет татах", cls:"ghost", act:()=>downloadAnket(o)},
     {label:"Мэдэгдэл илгээх", cls:"ghost", act:()=>{ closeModal(); noticeForm(o); }},
@@ -952,6 +1092,7 @@ function detail(id){
       {label:"Зөвшөөрөх", cls:"", act:()=>{ closeModal(); approveOrg(o.id); }});
   }
   openModal(o.name, body, acts);
+  logAct("Байгууллагын дэлгэрэнгүй харсан", `${o.name} (№${o.reg})`);
   paintAdminMedia(o);
   paintStaff(o, false);
 }
@@ -994,7 +1135,8 @@ function noticeForm(o){
       const t = $("#n_text").value.trim();
       if(!t) return toast("Агуулгаа бичнэ үү.");
       pushNotice(o, "adm:"+uid(), $("#n_kind").value, t, imgs);
-      await saveDB(); closeModal(); render(); toast("Мэдэгдлийг илгээлээ.");
+      await saveDB(); await logAct("Мэдэгдэл илгээсэн", o.name, $("#n_kind").value);
+      closeModal(); render(); toast("Мэдэгдлийг илгээлээ.");
     }}
   ]);
   const paintImgs = () => {
@@ -1123,6 +1265,7 @@ function exportStaffCSV(o, list){
   const head = [q("Байгууллага"), ...cols.map(c=>q(c[0]))].join(",");
   const rows = list.map(st=>[q(o.name), ...cols.map(c=>q(st[c[1]]))].join(","));
   downloadBlob("\uFEFF" + [head, ...rows].join("\r\n"), "text/csv;charset=utf-8;", `ajilchid_${o.reg}.csv`);
+  logAct("Ажилчдын CSV татсан", o.name, `${list.length} ажилтан`);
   toast(`${list.length} ажилтан татагдлаа.`);
 }
 
@@ -1197,11 +1340,14 @@ function orgForm(o){
         status:isAdmin?$("#e_status").value:v.status, note:$("#e_note").value.trim()
       };
       if(isNew){
-        DB.orgs.push({ id:uid(), ...data, appr:"ok", apprAt:today(), apprNote:"", pw:await sha($("#e_pw").value||"1234"), created:today(), notices:[] });
+        DB.orgs.push({ id:uid(), ...data, appr:"ok", apprAt:today(), apprNote:"",
+                       pw:await sha($("#e_pw").value||"1234"), mustPw:true, created:today(), notices:[] });
       } else {
         Object.assign(o, data);
       }
-      await saveDB(); await ensureNotices(); closeModal(); render();
+      await saveDB(); await ensureNotices();
+      await logAct(isNew?"Байгууллага нэмсэн":"Байгууллагын мэдээлэл зассан", name);
+      closeModal(); render();
       toast(isNew?"Бүртгэл нэмэгдлээ.":"Мэдээллийг шинэчиллээ.");
     }}
   ]);
@@ -1221,7 +1367,9 @@ function pwForm(o){
       if(!await pwVerify(o.pw, $("#p_old").value)) return toast("Одоогийн нууц үг буруу байна.");
       if($("#p_new").value.length<4) return toast("Шинэ нууц үг дор хаяж 4 тэмдэгт байна.");
       if($("#p_new").value!==$("#p_new2").value) return toast("Шинэ нууц үг таарахгүй байна.");
-      o.pw = await sha($("#p_new").value); await saveDB(); closeModal(); toast("Нууц үг солигдлоо.");
+      o.pw = await sha($("#p_new").value); o.mustPw = false;
+      await saveDB(); await logAct("Нууц үгээ сольсон");
+      closeModal(); toast("Нууц үг солигдлоо.");
     }}
   ]);
 }
@@ -1240,10 +1388,62 @@ function adminPwForm(){
       if(await sha($("#a_old").value) !== me.pw) return toast("Одоогийн нууц үг буруу байна.");
       if($("#a_new").value.length < 6) return toast("Шинэ нууц үг дор хаяж 6 тэмдэгт байна.");
       if($("#a_new").value !== $("#a_new2").value) return toast("Шинэ нууц үг таарахгүй байна.");
-      me.pw = await sha($("#a_new").value); me.changed = today();
-      await saveDB(); closeModal(); render(); toast("Нууц үг солигдлоо.");
+      me.pw = await sha($("#a_new").value); me.changed = today(); me.mustPw = false;
+      await saveDB(); await logAct("Нууц үгээ сольсон");
+      closeModal(); render(); toast("Нууц үг солигдлоо.");
     }}
   ]);
+}
+
+/* ---------- Журналын хүснэгт ---------- */
+let AGQ = "";
+async function paintAudit(){
+  const host = $("#agBox"); if(!host) return;
+  const A = await loadAudit();
+  const q = AGQ.trim().toLowerCase();
+  const list = A.v.filter(e => !q ||
+      [e.t, e.who, e.name, e.act, e.target, e.info].join(" ").toLowerCase().includes(q))
+    .slice(-200).reverse();
+  if(!list.length){
+    host.innerHTML = `<div class="empty">${A.v.length ? "Шүүлтэд тохирох бичлэг олдсонгүй." : "Журнал хоосон байна."}</div>`;
+    return;
+  }
+  host.innerHTML = `
+    <table>
+      <thead><tr><th>Огноо, цаг</th><th>Хэн</th><th>Үйлдэл</th><th>Юун дээр</th><th>Тайлбар</th></tr></thead>
+      <tbody>${list.map(e=>`
+        <tr>
+          <td style="white-space:nowrap">${esc(e.t)}</td>
+          <td><div class="name">${esc(e.name)||"—"}</div><div class="reg">${esc(e.who)}</div></td>
+          <td>${esc(e.act)}</td>
+          <td>${esc(e.target)||'<span class="note">—</span>'}</td>
+          <td>${esc(e.info)||'<span class="note">—</span>'}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>`;
+  const n = A.v.length;
+  const more = n > list.length ? ` (сүүлийн ${list.length}-г харуулав, нийт ${n})` : ` (нийт ${n})`;
+  if($("#agMsg")) $("#agMsg").innerHTML = `<p class="note" style="margin:0 0 10px">Бичлэг${more}</p>`;
+}
+
+async function checkAudit(){
+  const bad = await verifyAudit();
+  const A = await loadAudit();
+  $("#agMsg").innerHTML = bad < 0
+    ? `<div class="msg ok">Журнал бүрэн бүтэн байна. ${A.v.length} бичлэг шалгагдлаа, өөрчлөгдсөн бичлэг олдсонгүй.</div>`
+    : `<div class="msg err">Анхаар: ${bad+1}-р бичлэгээс эхлэн журнал өөрчлөгдсөн байна (${esc(A.v[bad].t)}). Энэ нь хэн нэгэн гараар засварласан байж болзошгүйг илтгэнэ.</div>`;
+  logAct("Журналын бүрэн бүтэн байдлыг шалгасан", "", bad<0 ? "зөв" : `${bad+1}-р бичлэгээс эвдэрсэн`);
+}
+
+async function exportAudit(){
+  const A = await loadAudit();
+  if(!A.v.length) return toast("Журнал хоосон байна.");
+  const q = s => `"${String(s ?? "").replace(/"/g,'""')}"`;
+  const head = ["Огноо, цаг","Эрх","Нэр","Үйлдэл","Юун дээр","Тайлбар","Хураангуй"].map(q).join(",");
+  const rows = A.v.map(e=>[e.t,e.who,e.name,e.act,e.target,e.info,e.h].map(q).join(","));
+  downloadBlob("﻿" + [head, ...rows].join("\r\n"), "text/csv;charset=utf-8;", `khanuul_jurnal_${today()}.csv`);
+  await logAct("Журнал татсан", "", `${A.v.length} бичлэг`);
+  toast(`${A.v.length} бичлэг татагдлаа.`);
 }
 
 /* ---------- Админы эрхийн жагсаалт ---------- */
@@ -1281,8 +1481,9 @@ function adminReset(user){
     <p class="note">Эзэмшигч нь нэвтэрсний дараа «Миний нууц үг солих» хэсгээр заавал өөрчилнө.</p>`, [
     {label:"Болих", cls:"ghost", act:closeModal},
     {label:"Сэргээх", cls:"danger", act:async ()=>{
-      a.pw = await sha(ADMIN_RESET_PW); a.changed = "";
-      await saveDB(); closeModal(); render(); toast(`${a.name}-ийн нууц үгийг сэргээлээ.`);
+      a.pw = await sha(ADMIN_RESET_PW); a.changed = ""; a.mustPw = true;
+      await saveDB(); await logAct("Админы нууц үг сэргээсэн", a.name);
+      closeModal(); render(); toast(`${a.name}-ийн нууц үгийг сэргээлээ.`);
     }}
   ]);
 }
@@ -1296,7 +1497,8 @@ function adminDelete(user){
     {label:"Устгах", cls:"danger", act:async (btn)=>{
       if(!btn.dataset.armed){ btn.dataset.armed="1"; btn.textContent="Устгахыг баталгаажуулах"; return; }
       DB.admins = DB.admins.filter(x=>x.user!==user);
-      await saveDB(); closeModal(); render(); toast("Эрхийг устгалаа.");
+      await saveDB(); await logAct("Админ эрх устгасан", a.name);
+      closeModal(); render(); toast("Эрхийг устгалаа.");
     }}
   ]);
 }
@@ -1324,25 +1526,29 @@ function adminAddForm(){
       if($("#na_pw").value !== $("#na_pw2").value) return toast("Нууц үг таарахгүй байна.");
       DB.admins.push({ user, name, rank:$("#na_rank").value.trim(),
                        pw:await sha($("#na_pw").value), created:today(), changed:today() });
-      await saveDB(); closeModal(); render(); toast("Админ эрх нэмэгдлээ.");
+      await saveDB(); await logAct("Админ эрх нэмсэн", `${name} (${user})`);
+      closeModal(); render(); toast("Админ эрх нэмэгдлээ.");
     }}
   ]);
 }
 
 /* ---------- Модал ---------- */
-function openModal(title, body, buttons){
+function openModal(title, body, buttons, locked){
+  LOCKED = !!locked;
   $("#modalHost").innerHTML = `
     <div class="modal-bg"><div class="modal">
-      <h3>${esc(title)}<button class="x" id="mx">×</button></h3>
+      <h3>${esc(title)}${locked ? "" : `<button class="x" id="mx">×</button>`}</h3>
       <div class="body">${body}</div>
       <div class="foot">${buttons.map((b,i)=>`<button class="btn ${b.cls}" data-i="${i}">${esc(b.label)}</button>`).join("")}</div>
     </div></div>`;
   attachPwToggles($("#modalHost"));
-  $("#mx").onclick = closeModal;
-  $("#modalHost").querySelector(".modal-bg").onclick = e => { if(e.target.classList.contains("modal-bg")) closeModal(); };
+  if($("#mx")) $("#mx").onclick = closeModal;
+  $("#modalHost").querySelector(".modal-bg").onclick = e => {
+    if(!LOCKED && e.target.classList.contains("modal-bg")) closeModal();
+  };
   $("#modalHost").querySelectorAll(".foot .btn").forEach(btn=>btn.onclick=()=>buttons[+btn.dataset.i].act(btn));
 }
-function closeModal(){ $("#modalHost").innerHTML=""; }
+function closeModal(){ if(LOCKED) return; $("#modalHost").innerHTML=""; }
 document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); });
 
 /* ---------- CSV ---------- */
@@ -1357,6 +1563,7 @@ function exportCSV(list, filename){
   const head = cols.map(c=>q(c[0])).concat(q("Бүртгэлийн төлөв")).join(",");
   const rows = list.map(o=>cols.map(c=>q(o[c[1]])).concat(q(APPR[o.appr]||"")).join(","));
   downloadBlob("\uFEFF" + [head, ...rows].join("\r\n"), "text/csv;charset=utf-8;", filename);
+  logAct("Бүртгэлийн CSV татсан", filename, `${list.length} мөр`);
   toast(`${list.length} мөр татагдлаа.`);
 }
 
@@ -1382,12 +1589,14 @@ function paintStorage(){
 /* ---------- Бүх өгөгдлийг нөөцлөх ---------- */
 async function backupAll(){
   toast("Нөөц бэлтгэж байна…");
-  const pack = { app:"khanuul-registry", v:1, at:new Date().toISOString(), db:DB, media:{}, staff:{} };
+  const pack = { app:"khanuul-registry", v:1, at:new Date().toISOString(),
+                 db:DB, media:{}, staff:{}, audit:await loadAudit() };
   for(const o of DB.orgs){
     pack.media[o.id] = await loadMedia(o.id);
     pack.staff[o.id] = await loadStaff(o.id);
   }
   downloadBlob(JSON.stringify(pack), "application/json;charset=utf-8", `khanuul_nooc_${today()}.json`);
+  logAct("Бүх өгөгдлийг нөөцөлсөн", "", `${DB.orgs.length} байгууллага`);
   toast(`${DB.orgs.length} байгууллагын өгөгдөл нөөцлөгдлөө.`);
 }
 
@@ -1405,7 +1614,7 @@ async function restoreAll(file){
       <dt>Нөөц дэх байгууллага</dt><dd>${n}</dd>
       <dt>Одоо системд байгаа</dt><dd>${DB.orgs.length}</dd>
     </dl>
-    <p class="note">Солихоос өмнө одоогийн өгөгдлөө нөөцөлж авахыг зөвлөе.</p>`, [
+    <p class="note">Солихоос өмнө одоогийн өгөгдлөө нөөцөлж авахыг зөвлөе. Үйл ажиллагааны журнал солигдохгүй — одоогийнх хэвээр үлдэж, сэргээсэн үйлдэл дээр нь бичигдэнэ.</p>`, [
     {label:"Болих", cls:"ghost", act:closeModal},
     {label:"Сэргээх", cls:"danger", act:async (btn)=>{
       if(!btn.dataset.armed){ btn.dataset.armed="1"; btn.textContent="Сэргээхийг баталгаажуулах"; return; }
@@ -1415,6 +1624,7 @@ async function restoreAll(file){
       await saveDB();
       for(const id of Object.keys(pack.media||{})) await saveMedia(id, pack.media[id]);
       for(const id of Object.keys(pack.staff||{})) await saveStaff(id, pack.staff[id], null);
+      await logAct("Нөөцөөс сэргээсэн", "", `${n} байгууллага`);
       closeModal(); render(); toast(`${n} байгууллагын өгөгдөл сэргээгдлээ.`);
     }}
   ]);
@@ -1502,7 +1712,7 @@ async function importCSV(file){
       dir:get(r,"dir"), phone:get(r,"phone"), mail:get(r,"mail"),
       since:/^\d{4}-\d{2}-\d{2}$/.test(get(r,"since")) ? get(r,"since") : "",
       status:pick(get(r,"status"), STATUSES, STATUSES[0]), note:get(r,"note"),
-      appr:"ok", apprAt:today(), apprNote:"", pw:pw1234, created:today(), notices:[]
+      appr:"ok", apprAt:today(), apprNote:"", pw:pw1234, mustPw:true, created:today(), notices:[]
     });
   });
 
@@ -1517,6 +1727,7 @@ async function importCSV(file){
     {label:"Болих", cls:"ghost", act:closeModal},
     ...(added.length ? [{label:`${added.length} бүртгэл нэмэх`, cls:"", act:async ()=>{
       DB.orgs.push(...added); await saveDB(); await ensureNotices();
+      await logAct("CSV импортолсон", "", `${added.length} бүртгэл`);
       closeModal(); render(); toast(`${added.length} байгууллага нэмэгдлээ.`);
     }}] : [])
   ]);
@@ -1673,6 +1884,7 @@ async function downloadAnket(o){
   PDF болгохын тулд энэ файлыг браузераар нээж, хэвлэх цонхноос “PDF болгож хадгалах” сонголтыг ашиглана уу.</div>
 </div></body></html>`;
   downloadBlob(html, "text/html;charset=utf-8", `anket_${o.reg}_${o.name.replace(/[^\wА-Яа-яӨөҮү]+/g,"_").slice(0,30)}.html`);
+  logAct("Анкет татсан", `${o.name} (№${o.reg})`);
   toast("Анкет татагдлаа. Браузераар нээж PDF болгоно.");
 }
 
@@ -1683,6 +1895,7 @@ async function downloadAnket(o){
   fillSelect($("#rg_khoroo"), KHOROOS.map(String));
   attachPwToggles(document);
   await loadDB();
+  await loadAudit();
   await ensureNotices();
   renderAuthStats();
 })();
